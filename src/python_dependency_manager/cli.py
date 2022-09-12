@@ -1,4 +1,5 @@
-from .core import PackageManagers, OperationCanceledException
+from .core import PackageManagers, OperationCanceledException, get_package_managers_list
+
 
 def show_alternatives(prompt, alternative_list, default=None, show_cancel=True):
     """
@@ -115,11 +116,10 @@ def interactive_initialize(default_package_manager, default_install_local, defau
     """
     package_manager = default_package_manager
 
-    choice = show_alternatives('Select a package manager', ['Pip', 'Conda'], 0 if default_package_manager == PackageManagers.pip else 1, True)
-    if choice == 0:
-        package_manager = PackageManagers.pip
-    elif choice == 1:
-        package_manager = PackageManagers.conda
+    # The package manager enum always contains "common" at 1, which is not offered as an option, so the returned
+    # choice, which starts at zero, always corresponds to the package manager index-2
+    choice = show_alternatives('Select a package manager', [x.capitalize() for x in get_package_managers_list()], default_package_manager.value - 2, True)
+    package_manager = PackageManagers(choice + 2)
 
     install_local = default_install_local
 

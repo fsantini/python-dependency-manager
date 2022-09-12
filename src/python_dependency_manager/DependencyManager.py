@@ -4,11 +4,18 @@ from configparser import ConfigParser
 import shlex
 import subprocess
 
-from .core import process_alternatives, pkg_exists, SetupFailedError, PackageManagers
+from .config import PackageManagers
+from .core import process_alternatives, pkg_exists, SetupFailedError, get_package_managers_list
+from .installers import install_package
+
 
 class DependencyManager:
 
-    def __init__(self, config_file=None, pkg_dict=None, interactive_initialization=True, use_gui=False, install_local=False, package_manager=PackageManagers.pip, extra_command_line=''):
+    def __init__(self, config_file=None, pkg_dict=None, interactive_initialization=True,
+                 use_gui=False,
+                 install_local=False,
+                 package_manager=PackageManagers.pip,
+                 extra_command_line=''):
         """
         Initialize the dependency manager.
 
@@ -25,12 +32,11 @@ class DependencyManager:
         self.initialized = not interactive_initialization
         self.pkg_to_install = {}
 
-
     def load_file(self, config_file):
         """
         Load the configuration file
         :param config_file: can be a string, a file-like object, or a path-like object
-        :return:
+        :return: Nothing
         """
 
         parser = ConfigParser(comment_prefixes=('#',))
@@ -49,32 +55,37 @@ class DependencyManager:
                 self.install_local = parser.getboolean('Global', 'local install')
 
             if parser.has_option('Global', 'package manager'):
-                if parser.get('Global', 'package manager') == 'conda':
-                    self.package_manager = PackageManagers.conda
-                else:
+                configured_manager = parser.get('Global', 'package manager')
+                try:
+                    self.package_manager = PackageManagers[configured_manager]
+                except KeyError:
+                    print('Warning: invalid package manager in configuration file. Using pip')
                     self.package_manager = PackageManagers.pip
+
+            if parser.has_option('Global', 'extra command line'):
+                self.extra_command_line = parser.get('Global', 'extra command line')
 
         if parser.has_section('Packages'):
             self.pkg_to_install[PackageManagers.common] = {}
             for package, alternatives in parser.items('Packages'):
                 self.pkg_to_install[PackageManagers.common][package] = process_alternatives(alternatives.split('\n'))
 
-        if parser.has_section('Pip'):
-            self.pkg_to_install[PackageManagers.pip] = {}
-            for package, alternatives in parser.items('Pip'):
-                self.pkg_to_install[PackageManagers.pip][package] = process_alternatives(alternatives.split('\n'))
+        package_managers = get_package_managers_list()  # list of possible package managers
 
-        if parser.has_section('Conda'):
-            self.pkg_to_install[PackageManagers.conda] = {}
-            for package, alternatives in parser.items('Conda'):
-                self.pkg_to_install[PackageManagers.conda][package] = process_alternatives(alternatives.split('\n'))
-
+        for package_manager_name in package_managers:
+            # sections are always capitalized
+            section_name = package_manager_name.capitalize()
+            package_manager = PackageManagers[package_manager_name]
+            if parser.has_section(section_name):
+                self.pkg_to_install[package_manager] = {}
+                for package, alternatives in parser.items(section_name):
+                    self.pkg_to_install[package_manager][package] = process_alternatives(alternatives.split('\n'))
 
     def load_dict(self, pkg_dict):
         """
         Load the configuration from a dictionary
-        :param config_dict:
-        :return:
+        :param pkg_dict: dictionary in the format {module_name: [list, of, alternatives, with, platform, markers]}
+        :return: Nothing
         """
 
         self.pkg_to_install[PackageManagers.common] = {}
@@ -83,11 +94,10 @@ class DependencyManager:
             alternatives = process_alternatives(alternatives)
             self.pkg_to_install[PackageManagers.common][package] = alternatives
 
-
     def install_all(self):
         """
         Install the packages
-        :return:
+        :return: Nothing
         """
         if not self.initialized:
             self.show_initialization()
@@ -101,13 +111,12 @@ class DependencyManager:
                 while not self.install_package(package, alternatives):
                     print(f'Error installing {package}. Trying a different alternative')
 
-
     def install_package(self, package, alternatives):
         """
         Install a package
         :param package: the package to install
         :param alternatives: a list of alternative names, recommended on top
-        :return:
+        :return: True if the package was installed, False otherwise
         """
         if not alternatives:
             raise SetupFailedError(f'Could not install {package}')
@@ -118,15 +127,12 @@ class DependencyManager:
         source = self.select_alternative(package, alternatives)
         alternatives.remove(source)
 
-        if self.package_manager == PackageManagers.conda:
-            return self.install_conda(source)
-        else:
-            return self.install_pip(source)
+        return install_package(self.package_manager, source, self.install_local, self.extra_command_line)
 
     def show_initialization(self):
         """
         Show the initialization interface
-        :return:
+        :return: Nothing
         """
 
         if self.use_gui:
@@ -140,6 +146,12 @@ class DependencyManager:
         self.initialized = True
 
     def select_alternative(self, package, alternatives):
+        """
+        Select an alternative from a list of alternatives
+        :param package: the provided module
+        :param alternatives: list of alternatives
+        :return: the selected alternative [str]
+        """
         if self.use_gui:
             from .gui import select_package_alternative
         else:
@@ -147,37 +159,4 @@ class DependencyManager:
 
         return select_package_alternative(package, alternatives)
 
-    def install_conda(self, package):
-        """
-        Install a package using conda
-        :param package: the package to install
-        :return:
-        """
-        command_list = [sys.executable, '-m', 'conda', 'install', '-y']
-        if self.extra_command_line.strip():
-            command_list += shlex.split(self.extra_command_line)
-        command_list.append(package)
-        try:
-            subprocess.check_call(command_list)
-            return True
-        except subprocess.CalledProcessError:
-            return False
-
-    def install_pip(self, package):
-        """
-        Install a package using pip
-        :param package: the package to install
-        :return:
-        """
-        command_list = [sys.executable, '-m', 'pip', 'install']
-        if self.install_local:
-            command_list.append('--user')
-        if self.extra_command_line.strip():
-            command_list += shlex.split(self.extra_command_line)
-        command_list.append(package)
-        try:
-            subprocess.check_call(command_list)
-            return True
-        except subprocess.CalledProcessError:
-            return False
 

@@ -1,8 +1,5 @@
-from enum import Enum
-
 from packaging.markers import Marker
-
-PackageManagers = Enum('PackageManagers', 'common pip conda')
+from .config import PackageManagers
 
 class SetupFailedError(Exception):
     pass
@@ -11,6 +8,16 @@ class SetupFailedError(Exception):
 class OperationCanceledException(Exception):
     pass
 
+
+def get_package_managers_list():
+    """
+    Get a list of the available package managers
+    :return: a list of strings
+    """
+    l = [x.name for x in PackageManagers]
+    l.pop(0) # remove the first dummy package manager
+
+    return l
 
 def process_alternatives(alternatives: list):
     """
