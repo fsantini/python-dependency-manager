@@ -27,13 +27,15 @@ def center_window(window):
 
 
 class InitDialog:
-    def __init__(self, parent, default_package_manager, default_install_local, default_extra_command_line):
+    def __init__(self, app, default_package_manager, default_install_local, default_extra_command_line):
         self.package_manager = default_package_manager
         self.local_install = default_install_local
         self.extra_command_line = default_extra_command_line
-        self.parent = parent
+        self.app = app
+        self.parent = ttk.Frame(app)
+        self.parent.pack(fill="both", expand=True)
         self.ok = False
-        parent.title("Initialization options")
+        self.app.title("Initialization options")
         self.body()
         self.buttonbox()
 
@@ -44,23 +46,23 @@ class InitDialog:
         pm_label.pack(side="left", padx=(10,10))
         self.package_manager_box = ttk.Combobox(f, values=[p.capitalize() for p in get_package_managers_list()], state="readonly")
         self.package_manager_box.set(self.package_manager.name.capitalize())
-        self.package_manager_box.pack(side="right")
-        f.pack(padx=(10,10), pady=(10,0))
+        self.package_manager_box.pack(side="left", fill="x", expand=True)
+        f.pack(fill="x", expand=True, padx=(10,10), pady=(10,0))
 
         f = ttk.Frame(self.parent)
         self.li_check = ttk.Checkbutton(f, text="Install locally")
         self.li_check.state(['!alternate'])
         self.li_check.state(['selected' if self.local_install else '!selected'])
-        self.li_check.pack()
-        f.pack(padx=(10,10),pady=(10,10))
+        self.li_check.pack(side="left", padx=(10,10))
+        f.pack(fill="x", padx=(10,10),pady=(10,10))
 
         f = ttk.Frame(self.parent)
         cl_label = ttk.Label(f, text="Extra command line options:")
         self.extra_command_line_entry = ttk.Entry(f)
         self.extra_command_line_entry.insert(0, self.extra_command_line)
         cl_label.pack(side="left", padx=(10,10))
-        self.extra_command_line_entry.pack(side="right")
-        f.pack(padx=(10,10))
+        self.extra_command_line_entry.pack(side="left", fill="x", expand=True)
+        f.pack(fill="x", expand=True, padx=(10,10))
 
     def ok_pressed(self):
         # print("ok")
@@ -69,22 +71,22 @@ class InitDialog:
         self.extra_command_line = self.extra_command_line_entry.get()
 
         self.ok = True
-        self.parent.destroy()
+        self.app.destroy()
 
     def cancel_pressed(self):
         self.ok = False
-        self.parent.destroy()
+        self.app.destroy()
 
 
     def buttonbox(self):
-        bboxFrame = tk.Frame(self.parent)
-        self.ok_button = tk.Button(bboxFrame, text='OK', width=5, command=self.ok_pressed)
+        bboxFrame = ttk.Frame(self.parent)
+        self.ok_button = ttk.Button(bboxFrame, text='OK', command=self.ok_pressed)
         self.ok_button.pack(side="left", padx=(20, 20))
-        cancel_button = tk.Button(bboxFrame, text='Cancel', width=5, command=self.cancel_pressed)
+        cancel_button = ttk.Button(bboxFrame, text='Cancel', command=self.cancel_pressed)
         cancel_button.pack(side="right", padx=(20, 20))
         bboxFrame.pack(pady=(10, 10))
-        self.parent.bind("<Return>", lambda event: self.ok_pressed())
-        self.parent.bind("<Escape>", lambda event: self.cancel_pressed())
+        self.app.bind("<Return>", lambda event: self.ok_pressed())
+        self.app.bind("<Escape>", lambda event: self.cancel_pressed())
 
 
 def interactive_initialize(default_package_manager, default_install_local, default_extra_command_line):
@@ -105,13 +107,15 @@ def interactive_initialize(default_package_manager, default_install_local, defau
 
 
 class SelectAlternativeDialog:
-    def __init__(self, parent, package_name, source_alternatives):
+    def __init__(self, app, package_name, source_alternatives):
         self.package_name = package_name
         self.source_alternatives = source_alternatives
-        self.parent = parent
+        self.app = app
+        self.parent = ttk.Frame(app)
+        self.parent.pack(fill="both", expand=True)
         self.alternative = None
         self.ok = False
-        parent.title(f'Choose an alternative for {package_name}')
+        self.app.title(f'Choose an alternative for {package_name}')
         self.body()
         self.buttonbox()
 
@@ -123,28 +127,28 @@ class SelectAlternativeDialog:
         alt_label.pack(side="left", padx=(10, 10))
         self.alternative_box = ttk.Combobox(f, values=self.source_alternatives, state="readonly")
         self.alternative_box.set(self.source_alternatives[0])
-        self.alternative_box.pack(side="right")
-        f.pack(padx=(10, 10), pady=(10, 0))
+        self.alternative_box.pack(side="right", fill="x", expand=True)
+        f.pack(fill="x", expand=True, padx=(10, 10), pady=(10, 0))
 
     def ok_pressed(self):
         # print("ok")
         self.alternative = self.alternative_box.get()
         self.ok = True
-        self.parent.destroy()
+        self.app.destroy()
 
     def cancel_pressed(self):
         self.ok = False
-        self.parent.destroy()
+        self.app.destroy()
 
     def buttonbox(self):
-        bboxFrame = tk.Frame(self.parent)
-        self.ok_button = tk.Button(bboxFrame, text='OK', width=5, command=self.ok_pressed)
+        bboxFrame = ttk.Frame(self.parent)
+        self.ok_button = ttk.Button(bboxFrame, text='OK', command=self.ok_pressed)
         self.ok_button.pack(side="left", padx=(20, 20))
-        cancel_button = tk.Button(bboxFrame, text='Cancel', width=5, command=self.cancel_pressed)
+        cancel_button = ttk.Button(bboxFrame, text='Cancel', command=self.cancel_pressed)
         cancel_button.pack(side="right", padx=(20, 20))
         bboxFrame.pack(pady=(10, 10))
-        self.parent.bind("<Return>", lambda event: self.ok_pressed())
-        self.parent.bind("<Escape>", lambda event: self.cancel_pressed())
+        self.app.bind("<Return>", lambda event: self.ok_pressed())
+        self.app.bind("<Escape>", lambda event: self.cancel_pressed())
 
 
 def select_package_alternative(package_name, source_alternatives):
