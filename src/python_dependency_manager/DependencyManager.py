@@ -2,7 +2,7 @@ import io
 from configparser import ConfigParser
 from enum import Enum
 
-from .core import process_alternatives, pkg_exists
+from .core import process_alternatives, pkg_exists, SetupFailedError
 
 PackageManagers = Enum('PackageManagers', 'common pip conda')
 
@@ -97,6 +97,27 @@ class DependencyManager:
             if not pkg_exists(package):
                 while not self.install_package(package, alternatives):
                     print(f'Error installing {package}. Trying a different alternative')
+
+
+    def install_package(self, package, alternatives):
+        """
+        Install a package
+        :param package: the package to install
+        :param alternatives: a list of alternative names, recommended on top
+        :return:
+        """
+        if not alternatives:
+            raise SetupFailedError(f'Could not install {package}')
+
+        if not self.initialized:
+            self.show_initialization()
+
+        source = self.select_alternative(package, alternatives)
+
+        if self.package_manager == PackageManagers.conda:
+            return self.install_conda(source)
+        else:
+            return self.install_pip(source)
 
 
 

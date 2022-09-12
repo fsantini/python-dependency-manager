@@ -1,6 +1,14 @@
 from packaging.markers import Marker
 
 
+class SetupFailedError(Exception):
+    pass
+
+
+class OperationCanceledException(Exception):
+    pass
+
+
 def process_alternatives(alternatives: list):
     """
     Process the alternatives to only show the ones relevant to the current setup
