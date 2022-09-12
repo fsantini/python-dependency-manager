@@ -1,15 +1,14 @@
 import io
+import sys
 from configparser import ConfigParser
-from enum import Enum
+import shlex
+import subprocess
 
-from .core import process_alternatives, pkg_exists, SetupFailedError
-
-PackageManagers = Enum('PackageManagers', 'common pip conda')
-
+from .core import process_alternatives, pkg_exists, SetupFailedError, PackageManagers
 
 class DependencyManager:
 
-    def __init__(self, config_file=None, pkg_dict=None, interactive_initialization=True, use_gui=False, install_local=False, package_manager=PackageManagers.pip):
+    def __init__(self, config_file=None, pkg_dict=None, interactive_initialization=True, use_gui=False, install_local=False, package_manager=PackageManagers.pip, extra_command_line=''):
         """
         Initialize the dependency manager.
 
@@ -22,6 +21,7 @@ class DependencyManager:
         self.use_gui = use_gui
         self.install_local = install_local
         self.package_manager = package_manager
+        self.extra_command_line = extra_command_line
         self.initialized = not interactive_initialization
         self.pkg_to_install = {}
 
@@ -89,6 +89,9 @@ class DependencyManager:
         Install the packages
         :return:
         """
+        if not self.initialized:
+            self.show_initialization()
+
         # compatible with python 3.6
         pkg_to_install = {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
 
@@ -113,11 +116,68 @@ class DependencyManager:
             self.show_initialization()
 
         source = self.select_alternative(package, alternatives)
+        alternatives.remove(source)
 
         if self.package_manager == PackageManagers.conda:
             return self.install_conda(source)
         else:
             return self.install_pip(source)
 
+    def show_initialization(self):
+        """
+        Show the initialization interface
+        :return:
+        """
 
+        if self.use_gui:
+            from .gui import interactive_initialize
+        else:
+            from .cli import interactive_initialize
+
+        self.package_manager, self.install_local, self.extra_command_line = interactive_initialize(self.package_manager, self.install_local, self.extra_command_line)
+        print(self.package_manager, self.install_local, self.extra_command_line)
+
+        self.initialized = True
+
+    def select_alternative(self, package, alternatives):
+        if self.use_gui:
+            from .gui import select_package_alternative
+        else:
+            from .cli import select_package_alternative
+
+        return select_package_alternative(package, alternatives)
+
+    def install_conda(self, package):
+        """
+        Install a package using conda
+        :param package: the package to install
+        :return:
+        """
+        command_list = [sys.executable, '-m', 'conda', 'install', '-y']
+        if self.extra_command_line.strip():
+            command_list += shlex.split(self.extra_command_line)
+        command_list.append(package)
+        try:
+            subprocess.check_call(command_list)
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    def install_pip(self, package):
+        """
+        Install a package using pip
+        :param package: the package to install
+        :return:
+        """
+        command_list = [sys.executable, '-m', 'pip', 'install']
+        if self.install_local:
+            command_list.append('--user')
+        if self.extra_command_line.strip():
+            command_list += shlex.split(self.extra_command_line)
+        command_list.append(package)
+        try:
+            subprocess.check_call(command_list)
+            return True
+        except subprocess.CalledProcessError:
+            return False
 

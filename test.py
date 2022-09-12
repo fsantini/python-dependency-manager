@@ -12,6 +12,8 @@ if __name__ == '__main__':
     dm.load_file('test.cfg')
     print(dm.pkg_to_install)
 
+    dm.install_all()
+
     a = 1
     def set_a():
         global a

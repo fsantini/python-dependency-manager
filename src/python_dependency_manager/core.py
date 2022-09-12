@@ -1,5 +1,8 @@
+from enum import Enum
+
 from packaging.markers import Marker
 
+PackageManagers = Enum('PackageManagers', 'common pip conda')
 
 class SetupFailedError(Exception):
     pass
