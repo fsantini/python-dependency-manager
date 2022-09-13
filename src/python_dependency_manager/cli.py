@@ -152,7 +152,9 @@ def select_package_alternative(package, alternatives_list, optional=False):
     else:
         display_alternatives = alternatives_list
 
-    choice = show_alternatives(f'Select a source for {package}', display_alternatives, default=0)
+    opt_req = 'Optional' if optional else 'Required'
+
+    choice = show_alternatives(f'Select a source for {package} ({opt_req})', display_alternatives, default=0)
     if optional:
         if choice == 0:
             return None
