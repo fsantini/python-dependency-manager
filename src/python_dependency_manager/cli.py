@@ -1,4 +1,6 @@
-from .core import PackageManagers, OperationCanceledException, get_package_managers_list
+from .config import DONT_INSTALL_TEXT
+from .core import PackageManagers, get_package_managers_list
+from .exceptions import OperationCanceledException
 
 
 def show_alternatives(prompt, alternative_list, default=None, show_cancel=True):
@@ -130,17 +132,28 @@ def interactive_initialize(default_package_manager, default_install_local, defau
     return package_manager, install_local, extra_command_line
 
 
-def select_package_alternative(package, alternatives_list):
+def select_package_alternative(package, alternatives_list, optional=False):
     """
     Select a package alternative
     :param package: the package name
     :param alternatives_list: the list of alternatives
     :return:
     """
-    if len(alternatives_list) == 1:
+    if len(alternatives_list) == 1 and not optional:
         return alternatives_list[0]
 
-    choice = show_alternatives(f'Select a source for {package}', alternatives_list, default=0)
+    if optional:
+        display_alternatives = [DONT_INSTALL_TEXT] + alternatives_list
+    else:
+        display_alternatives = alternatives_list
+
+
+    choice = show_alternatives(f'Select a source for {package}', display_alternatives, default=0)
+    if optional:
+        if choice == 0:
+            return None
+        else:
+            return alternatives_list[choice - 1]
     return alternatives_list[choice]
 
 

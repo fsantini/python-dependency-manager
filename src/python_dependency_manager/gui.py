@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 
-from .config import PackageManagers
-from .core import get_package_managers_list, OperationCanceledException
+from .config import PackageManagers, DONT_INSTALL_TEXT
+from .core import get_package_managers_list
+from .exceptions import OperationCanceledException
 
 
 def center_window(window):
@@ -151,17 +152,28 @@ class SelectAlternativeDialog:
         self.app.bind("<Escape>", lambda event: self.cancel_pressed())
 
 
-def select_package_alternative(package_name, source_alternatives):
+def select_package_alternative(package_name, source_alternatives, optional=False):
     """
     Show the select alternative interface
     :param package_name: the package name
     :param source_alternatives: the source alternatives
     :return: the selected alternative
     """
+    if len(source_alternatives) == 1 and not optional:
+        return source_alternatives[0]
+
+    if optional:
+        display_alternatives = [DONT_INSTALL_TEXT] + source_alternatives
+    else:
+        display_alternatives = source_alternatives
+
     root = tk.Tk()
-    dialog = SelectAlternativeDialog(root, package_name, source_alternatives)
+    dialog = SelectAlternativeDialog(root, package_name, display_alternatives)
     center_window(root)
     root.mainloop()
     if not dialog.ok:
         raise OperationCanceledException()
+    if optional and dialog.alternative == DONT_INSTALL_TEXT:
+        return None
+
     return dialog.alternative

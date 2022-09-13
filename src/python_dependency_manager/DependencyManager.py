@@ -1,17 +1,21 @@
 import io
+import re
 import sys
 from configparser import ConfigParser
 import shlex
 import subprocess
 
-from .config import PackageManagers
-from .core import process_alternatives, pkg_exists, SetupFailedError, get_package_managers_list
+from .config import PackageManagers, ignored_packages_file
+from .core import process_alternatives, pkg_exists, get_package_managers_list
+from .exceptions import ConfigurationError, SetupFailedError
 from .installers import install_package
 
 
 class DependencyManager:
 
-    def __init__(self, config_file=None, pkg_dict=None, interactive_initialization=True,
+    def __init__(self, unique_id=None,
+                 config_file=None, pkg_dict=None,
+                 interactive_initialization=True,
                  use_gui=False,
                  install_local=False,
                  package_manager=PackageManagers.pip,
@@ -25,12 +29,27 @@ class DependencyManager:
         :param package_manager: pip or conda
         :return:
         """
+        self.unique_id = unique_id
         self.use_gui = use_gui
         self.install_local = install_local
         self.package_manager = package_manager
         self.extra_command_line = extra_command_line
         self.initialized = not interactive_initialization
         self.pkg_to_install = {}
+        self.optional_packages = []
+        self.ignored_packages = []
+        if config_file:
+            self.load_file(config_file)
+        elif pkg_dict:
+            self.load_dict(pkg_dict)
+
+    def validate_config(self):
+        """
+        Validate the current configuration
+        :return: Nothing
+        """
+        if not self.unique_id and self.optional_packages:
+            raise ConfigurationError('Cannot use optional packages without a unique id')
 
     def load_file(self, config_file):
         """
@@ -48,6 +67,9 @@ class DependencyManager:
 
         # load global configuration
         if parser.has_section('Global'):
+            if parser.has_option('Global', 'id'):
+                self.unique_id = parser.get('Global', 'id')
+
             if parser.has_option('Global', 'use gui'):
                 self.use_gui = parser.getboolean('Global', 'use gui')
 
@@ -65,10 +87,15 @@ class DependencyManager:
             if parser.has_option('Global', 'extra command line'):
                 self.extra_command_line = parser.get('Global', 'extra command line')
 
+            if parser.has_option('Global', 'optional packages'):
+                opt_packages = parser.get('Global', 'optional packages').strip()
+                # split the list at commas and newlines
+                self.optional_packages = [x.strip() for x in re.split('\n|,', opt_packages)]
+
         if parser.has_section('Packages'):
             self.pkg_to_install[PackageManagers.common] = {}
             for package, alternatives in parser.items('Packages'):
-                self.pkg_to_install[PackageManagers.common][package] = process_alternatives(alternatives.split('\n'))
+                self.pkg_to_install[PackageManagers.common][package] = process_alternatives(re.split('\n|,', alternatives))
 
         package_managers = get_package_managers_list()  # list of possible package managers
 
@@ -80,6 +107,8 @@ class DependencyManager:
                 self.pkg_to_install[package_manager] = {}
                 for package, alternatives in parser.items(section_name):
                     self.pkg_to_install[package_manager][package] = process_alternatives(alternatives.split('\n'))
+
+        self.validate_config()
 
     def load_dict(self, pkg_dict):
         """
@@ -94,9 +123,43 @@ class DependencyManager:
             alternatives = process_alternatives(alternatives)
             self.pkg_to_install[PackageManagers.common][package] = alternatives
 
-    def install_all(self):
+        self.validate_config()
+
+    def load_ignored_packages(self):
+        """
+        Get the list of ignored packages
+        :return: list of ignored packages
+        """
+        try:
+            with open(ignored_packages_file(self.unique_id), 'r') as f:
+                self.ignored_packages = f.read().splitlines()
+        except FileNotFoundError:
+            self.ignored_packages = []
+
+    def clear_ignored_packages(self):
+        """
+        Clear the ignore list
+        :return: Nothing
+        """
+        self.ignored_packages = []
+        with open(ignored_packages_file(self.unique_id), 'w') as f:
+            f.write('')
+
+    def mark_ignored(self, package):
+        """
+        Mark a package as ignored
+        :param package: package to ignore
+        :return: Nothing
+        """
+        print(f'Ignoring {package}')
+        self.ignored_packages.append(package)
+        with open(ignored_packages_file(self.unique_id), 'w') as f:
+            f.write('\n'.join(self.ignored_packages))
+
+    def install_all(self, force_optional=False):
         """
         Install the packages
+        :param force_optional: if True, the program will ask to install optional packages even if they were already ignored once
         :return: Nothing
         """
         if not self.initialized:
@@ -105,13 +168,20 @@ class DependencyManager:
         # compatible with python 3.6
         pkg_to_install = {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
 
+        if force_optional:
+            self.clear_ignored_packages()
+
+        self.load_ignored_packages()
+
         for package, alternatives in pkg_to_install.items():
+            if package in self.ignored_packages:
+                continue
             # if the package is not installed, try to install it until it works or there are no more alternatives
             if not pkg_exists(package):
-                while not self.install_package(package, alternatives):
+                while not self.install_package(package, alternatives, optional=package in self.optional_packages):
                     print(f'Error installing {package}. Trying a different alternative')
 
-    def install_package(self, package, alternatives):
+    def install_package(self, package, alternatives, optional=False):
         """
         Install a package
         :param package: the package to install
@@ -124,7 +194,10 @@ class DependencyManager:
         if not self.initialized:
             self.show_initialization()
 
-        source = self.select_alternative(package, alternatives)
+        source = self.select_alternative(package, alternatives, optional)
+        if optional and source is None:
+            self.mark_ignored(package)
+            return True
         alternatives.remove(source)
 
         return install_package(self.package_manager, source, self.install_local, self.extra_command_line)
@@ -141,11 +214,10 @@ class DependencyManager:
             from .cli import interactive_initialize
 
         self.package_manager, self.install_local, self.extra_command_line = interactive_initialize(self.package_manager, self.install_local, self.extra_command_line)
-        print(self.package_manager, self.install_local, self.extra_command_line)
 
         self.initialized = True
 
-    def select_alternative(self, package, alternatives):
+    def select_alternative(self, package, alternatives, optional=False):
         """
         Select an alternative from a list of alternatives
         :param package: the provided module
@@ -157,6 +229,6 @@ class DependencyManager:
         else:
             from .cli import select_package_alternative
 
-        return select_package_alternative(package, alternatives)
+        return select_package_alternative(package, alternatives, optional)
 
 

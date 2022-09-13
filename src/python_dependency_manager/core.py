@@ -1,23 +1,17 @@
 from packaging.markers import Marker
 from .config import PackageManagers
 
-class SetupFailedError(Exception):
-    pass
-
-
-class OperationCanceledException(Exception):
-    pass
-
 
 def get_package_managers_list():
     """
     Get a list of the available package managers
     :return: a list of strings
     """
-    l = [x.name for x in PackageManagers]
-    l.pop(0) # remove the first dummy package manager
+    pm_list = [x.name for x in PackageManagers]
+    pm_list.pop(0)  # remove the first dummy package manager
 
-    return l
+    return pm_list
+
 
 def process_alternatives(alternatives: list):
     """
@@ -29,7 +23,8 @@ def process_alternatives(alternatives: list):
     alternatives_out = []
 
     for alternative in alternatives:
-        if not alternative.strip(): continue
+        if not alternative.strip():
+            continue
         if ';' in alternative:
             marker = Marker(alternative.split(';')[1])
             if marker.evaluate():
