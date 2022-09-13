@@ -14,9 +14,6 @@ def install_package(package_manager, package, install_local, extra_command_line)
     :param extra_command_line: extra command line parameters
     :return:
     """
-    print(f'Installing {package}...')
-    print(package_manager, install_local, extra_command_line)
-    return True
     if package_manager == PackageManagers.pip:
         return install_pip(package, install_local, extra_command_line)
     elif package_manager == PackageManagers.conda:
