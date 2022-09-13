@@ -6,7 +6,10 @@ from .exceptions import OperationCanceledException
 def show_alternatives(prompt, alternative_list, default=None, show_cancel=True):
     """
     Show the list of alternatives
+    :param prompt: the prompt
     :param alternative_list: a list of alternatives
+    :param default: the default choice
+    :param show_cancel: whether to show the cancel option
     :return:
     """
     print(prompt)
@@ -78,6 +81,7 @@ def show_yesno(prompt, default=None, show_cancel=True):
 
         print('Invalid choice. Please try again')
 
+
 def show_open(prompt, default=None, show_cancel=True):
     print(prompt)
     if default is not None:
@@ -116,11 +120,11 @@ def interactive_initialize(default_package_manager, default_install_local, defau
     Show the initialization interface
     :return:
     """
-    package_manager = default_package_manager
 
     # The package manager enum always contains "common" at 1, which is not offered as an option, so the returned
     # choice, which starts at zero, always corresponds to the package manager index-2
-    choice = show_alternatives('Select a package manager', [x.capitalize() for x in get_package_managers_list()], default_package_manager.value - 2, True)
+    choice = show_alternatives('Select a package manager', [x.capitalize() for x in get_package_managers_list()],
+                               default_package_manager.value - 2, True)
     package_manager = PackageManagers(choice + 2)
 
     install_local = default_install_local
@@ -137,6 +141,7 @@ def select_package_alternative(package, alternatives_list, optional=False):
     Select a package alternative
     :param package: the package name
     :param alternatives_list: the list of alternatives
+    :param optional: whether the package is optional
     :return:
     """
     if len(alternatives_list) == 1 and not optional:
@@ -147,7 +152,6 @@ def select_package_alternative(package, alternatives_list, optional=False):
     else:
         display_alternatives = alternatives_list
 
-
     choice = show_alternatives(f'Select a source for {package}', display_alternatives, default=0)
     if optional:
         if choice == 0:
@@ -155,5 +159,3 @@ def select_package_alternative(package, alternatives_list, optional=False):
         else:
             return alternatives_list[choice - 1]
     return alternatives_list[choice]
-
-

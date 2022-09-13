@@ -26,6 +26,7 @@ def install_conda(package, extra_command_line):
     """
     Install a package using conda
     :param package: the package to install
+    :param extra_command_line: extra command line parameters
     :return:
     """
     command_list = [sys.executable, '-m', 'conda', 'install', '-y']
@@ -43,6 +44,8 @@ def install_pip(package, install_local, extra_command_line):
     """
     Install a package using pip
     :param package: the package to install
+    :param install_local: whether to install locally
+    :param extra_command_line: extra command line parameters
     :return:
     """
     command_list = [sys.executable, '-m', 'pip', 'install']

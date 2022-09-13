@@ -1,9 +1,6 @@
 import io
 import re
-import sys
 from configparser import ConfigParser
-import shlex
-import subprocess
 
 from .config import PackageManagers, ignored_packages_file
 from .core import process_alternatives, pkg_exists, get_package_managers_list
@@ -90,12 +87,13 @@ class DependencyManager:
             if parser.has_option('Global', 'optional packages'):
                 opt_packages = parser.get('Global', 'optional packages').strip()
                 # split the list at commas and newlines
-                self.optional_packages = [x.strip() for x in re.split('\n|,', opt_packages)]
+                self.optional_packages = [x.strip() for x in re.split('[\n,]', opt_packages)]
 
         if parser.has_section('Packages'):
             self.pkg_to_install[PackageManagers.common] = {}
             for package, alternatives in parser.items('Packages'):
-                self.pkg_to_install[PackageManagers.common][package] = process_alternatives(re.split('\n|,', alternatives))
+                self.pkg_to_install[PackageManagers.common][package] = \
+                    process_alternatives(re.split('[\n,]', alternatives))
 
         package_managers = get_package_managers_list()  # list of possible package managers
 
@@ -186,6 +184,7 @@ class DependencyManager:
         Install a package
         :param package: the package to install
         :param alternatives: a list of alternative names, recommended on top
+        :param optional: if True, the package is optional and the user will be asked if he wants to install it
         :return: True if the package was installed, False otherwise
         """
         if not alternatives:
@@ -213,7 +212,8 @@ class DependencyManager:
         else:
             from .cli import interactive_initialize
 
-        self.package_manager, self.install_local, self.extra_command_line = interactive_initialize(self.package_manager, self.install_local, self.extra_command_line)
+        self.package_manager, self.install_local, self.extra_command_line = \
+            interactive_initialize(self.package_manager, self.install_local, self.extra_command_line)
 
         self.initialized = True
 
@@ -222,6 +222,7 @@ class DependencyManager:
         Select an alternative from a list of alternatives
         :param package: the provided module
         :param alternatives: list of alternatives
+        :param optional: if True, the package is optional and the user will be asked if he wants to install it
         :return: the selected alternative [str]
         """
         if self.use_gui:
@@ -230,5 +231,3 @@ class DependencyManager:
             from .cli import select_package_alternative
 
         return select_package_alternative(package, alternatives, optional)
-
-
