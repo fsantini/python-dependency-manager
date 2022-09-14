@@ -11,4 +11,4 @@ if __name__ == '__main__':
     dm = DependencyManager()
     dm.load_file('test.cfg')
 
-    dm.install_all(force_optional=True)
+    dm.install_interactive(force_optional=True)

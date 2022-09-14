@@ -21,6 +21,7 @@ class DependencyManager:
         Initialize the dependency manager.
 
         :param interactive_initialization: If True, the user will be prompted for global initialization parameters.
+                            Note: this does not influence the way the user is asked for alternatives.
         :param use_gui: Controls whether a gui is displayed, or if communication is done through the console
         :param install_local: --user option for pip
         :param package_manager: pip or conda
@@ -33,6 +34,9 @@ class DependencyManager:
         self.extra_command_line = extra_command_line
         self.initialized = not interactive_initialization
         self.pkg_to_install = {}
+        self.pkg_to_install[PackageManagers.common] = {}
+        for pm in get_package_managers_list():
+            self.pkg_to_install[PackageManagers[pm]] = {}
         self.optional_packages = []
         self.ignored_packages = []
         if config_file:
@@ -154,7 +158,7 @@ class DependencyManager:
         with open(ignored_packages_file(self.unique_id), 'w') as f:
             f.write('\n'.join(self.ignored_packages))
 
-    def install_all(self, force_optional=False):
+    def install_interactive(self, force_optional=False):
         """
         Install the packages
         :param force_optional: if True, the program will ask to install optional packages even if they were already ignored once
@@ -162,6 +166,7 @@ class DependencyManager:
         """
         if not self.initialized:
             self.show_initialization()
+
 
         # compatible with python 3.6
         pkg_to_install = {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
@@ -178,6 +183,32 @@ class DependencyManager:
             if not pkg_exists(package):
                 while not self.install_package(package, alternatives, optional=package in self.optional_packages):
                     print(f'Error installing {package}. Trying a different alternative')
+
+    def install_auto(self, install_optional=False):
+        """
+        Install the packages automatically
+        :param install_optional: if True, optional packages will be installed
+        :return: Nothing
+        """
+
+        # compatible with python 3.6
+        pkg_to_install = {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
+
+        for package, alternatives in pkg_to_install.items():
+            if not pkg_exists(package):
+                if install_optional or package not in self.optional_packages:
+                    while not install_package(self.package_manager,
+                                              package,
+                                              alternatives[0],
+                                              self.install_local,
+                                              self.extra_command_line):
+                        print(f'Error installing {package}. Trying a different alternative')
+                        alternatives.pop(0)
+                        if not alternatives and package not in self.optional_packages:
+                            raise SetupFailedError(f'Failed to install {package}')
+                        else:
+                            print(f'No more alternatives for {package}. Not failing because it is optional')
+                            break
 
     def install_package(self, package, alternatives, optional=False):
         """
