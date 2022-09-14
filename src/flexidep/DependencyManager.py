@@ -198,7 +198,6 @@ class DependencyManager:
             if not pkg_exists(package):
                 if install_optional or package not in self.optional_packages:
                     while not install_package(self.package_manager,
-                                              package,
                                               alternatives[0],
                                               self.install_local,
                                               self.extra_command_line):
