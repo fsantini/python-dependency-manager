@@ -5,7 +5,7 @@ from tkinter import *
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from python_dependency_manager import DependencyManager
+from flexidep import DependencyManager
 
 if __name__ == '__main__':
     dm = DependencyManager()

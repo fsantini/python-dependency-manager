@@ -4,7 +4,7 @@ import appdirs
 
 from .exceptions import ConfigurationError
 
-APP_NAME = 'com.francescosantini.python_dependency_manager'
+APP_NAME = 'com.francescosantini.flexidep'
 APP_AUTHOR = 'Francesco Santini'
 
 PackageManagers = Enum('PackageManagers', 'common pip conda')
