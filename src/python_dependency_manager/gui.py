@@ -108,21 +108,23 @@ def interactive_initialize(default_package_manager, default_install_local, defau
 
 
 class SelectAlternativeDialog:
-    def __init__(self, app, package_name, source_alternatives):
+    def __init__(self, app, package_name, source_alternatives, optional=False):
         self.package_name = package_name
         self.source_alternatives = source_alternatives
         self.app = app
+        self.optional = optional
         self.parent = ttk.Frame(app)
         self.parent.pack(fill="both", expand=True)
         self.alternative = None
         self.ok = False
-        self.app.title(f'Choose an alternative for {package_name}')
+        self.app.title(f'Choose a source for {package_name}')
         self.body()
         self.buttonbox()
 
     def body(self):
-        title_label = ttk.Label(self.parent, text=f'Choose a source package for {self.package_name}')
-        title_label.pack(pady=(10, 0))
+        opt_req = "Optional" if self.optional else "Required"
+        title_label = ttk.Label(self.parent, text=f'Choose a source package for {self.package_name} ({opt_req})')
+        title_label.pack(padx=(10,10),pady=(10, 0))
         f = ttk.Frame(self.parent)
         alt_label = ttk.Label(f, text="Package:")
         alt_label.pack(side="left", padx=(10, 10))
@@ -169,7 +171,7 @@ def select_package_alternative(package_name, source_alternatives, optional=False
         display_alternatives = source_alternatives
 
     root = tk.Tk()
-    dialog = SelectAlternativeDialog(root, package_name, display_alternatives)
+    dialog = SelectAlternativeDialog(root, package_name, display_alternatives, optional)
     center_window(root)
     root.mainloop()
     if not dialog.ok:
