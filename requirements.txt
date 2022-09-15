@@ -1,2 +1,2 @@
-future
 packaging
+appdirs
