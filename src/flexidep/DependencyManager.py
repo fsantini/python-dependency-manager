@@ -10,8 +10,8 @@ from .installers import install_package
 
 class DependencyManager:
 
-    def __init__(self, unique_id=None,
-                 config_file=None, pkg_dict=None,
+    def __init__(self, config_file=None, pkg_dict=None,
+                 unique_id=None,
                  interactive_initialization=True,
                  use_gui=False,
                  install_local=False,
@@ -19,7 +19,9 @@ class DependencyManager:
                  extra_command_line=''):
         """
         Initialize the dependency manager.
-
+        :param config_file: can be a string, a file-like object, or a path-like object
+        :param pkg_dict: dictionary in the format {module_name: [list, of, alternative, sources, with, platform, markers]}
+        :param unique_id: unique id for the project
         :param interactive_initialization: If True, the user will be prompted for global initialization parameters.
                             Note: this does not influence the way the user is asked for alternatives.
         :param use_gui: Controls whether a gui is displayed, or if communication is done through the console

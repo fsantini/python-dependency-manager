@@ -31,10 +31,38 @@ except SetupFailedError:
     print('Setup failed')
 ```
 
+A `DependencyManager` object is created with the following parameters:
+```python
+DependencyManager(config_file=None, pkg_dict=None,
+                  unique_id=None,
+                  interactive_initialization=True,
+                  use_gui=False,
+                  install_local=False,
+                  package_manager=PackageManagers.pip,
+                  extra_command_line='')
+```
+
+* `config_file`: path to the configuration file. It can be a string, a Path-like object or a file-like object.
+**Note**: all configuration options in a config file supersede the options specified in the constructor.
+* `pkg_dict`: dictionary containing the configuration. If both `config_file` and `pkg_dict` are provided, the file is used.
+The dictionary has the format `{module_name: [list, of, alternative, sources, with, platform, markers]}`
+* `unique_id`: unique identifier for the project. It is used to store the configuration in the user's home directory.
+* `interactive_initialization`: if True, the user is asked to choose the global installation paramters.
+* `use_gui`: if True, a GUI is used for the interactive installation.
+* `install_local`: if True, the packages are installed locally in the current environment (`--user` flag to pip)
+* `package_manager`: package manager to use. Can be `PackageManagers.pip` or `PackageManagers.conda`.
+* `extra_command_line`: extra command line arguments to pass to the package manager.
+
+
 The main functions that are used are:
 * `load_file(file)` to load the configuration file. `file` can be a file name, a file object, or a path-like object.
 * `install_interactive(force_optional)` to install the dependencies in interactive mode. If force_optional is false, optional dependencies will only be asked once and the choice will be remembered. If it is true, the choices are cleared and the optional dependencies are asked again.
 * `install_auto(install_optional)` to install the dependencies in automatic mode. If install_optional is true, optional dependencies are installed too, otherwise only the required ones are.
+
+#### Utility functions
+The following functions are provided for convenience:
+* `is_conda()` returns True if the current environment is a conda environment.
+* `is_frozen()` returns True if the current environment is frozen (e.g. using pyinstaller).
 
 ### Configuration file
 A typical configuration file is the following:
