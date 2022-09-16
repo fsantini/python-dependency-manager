@@ -16,6 +16,9 @@ skip-string-normalization = true
     [tool.pylint.basic]
     good-names = ['DependencyManager', 'fd', 'ok']
 
+    [tool.pylint.messages_control]
+    disable = ['no-else-raise', 'no-else-return']
+
     [tool.pylint.design]
     max-args = 9
     max-attributes = 50

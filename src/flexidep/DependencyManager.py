@@ -228,8 +228,9 @@ class DependencyManager:
                         alternatives.pop(0)
                         if not alternatives and package not in self.optional_packages:
                             raise SetupFailedError(f'Failed to install {package}')
-                        print(f'No more alternatives for {package}. Not failing because it is optional')
-                        break
+                        else:
+                            print(f'No more alternatives for {package}. Not failing because it is optional')
+                            break
 
     def install_package(self, package, alternatives, optional=False):
         """

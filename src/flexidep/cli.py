@@ -80,7 +80,7 @@ def show_yesno(prompt, default=None, show_cancel=True):
 
         if choice_char == 'y':
             return True
-        if choice_char == 'n':
+        elif choice_char == 'n':
             return False
 
         print('Invalid choice. Please try again')
@@ -111,7 +111,7 @@ def show_open(prompt, default=None, show_cancel=True):
                 raise OperationCanceledError()
             if choice_char == 'y':
                 return default
-            if choice_char == 'n':
+            elif choice_char == 'n':
                 break
             print('Invalid choice. Please try again')
 
@@ -175,5 +175,6 @@ def select_package_alternative(package, alternatives_list, optional=False):
     if optional:
         if choice == 0:
             return None
-        return alternatives_list[choice - 1]
+        else:
+            return alternatives_list[choice - 1]
     return alternatives_list[choice]

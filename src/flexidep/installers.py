@@ -19,9 +19,10 @@ def install_package(package_manager, package, install_local, extra_command_line)
     """
     if package_manager == PackageManagers.pip:
         return install_pip(package, install_local, extra_command_line)
-    if package_manager == PackageManagers.conda:
+    elif package_manager == PackageManagers.conda:
         return install_conda(package, extra_command_line)
-    raise ValueError('Unknown package manager')
+    else:
+        raise ValueError('Unknown package manager')
 
 
 def install_conda(package, extra_command_line):

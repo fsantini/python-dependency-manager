@@ -19,7 +19,7 @@ For the interactive installation, a command-line interface or a GUI based on tk 
 ### Integration in your code
 
 ```python
-from flexidep import DependencyManager, SetupFailedError, OperationCanceledException
+from flexidep import DependencyManager, SetupFailedError, OperationCanceledError
 
 dm = DependencyManager()
 dm.load_file('test.cfg')
