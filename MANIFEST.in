@@ -1,0 +1,4 @@
+exclude test.py
+exclude test.cfg
+
+include requirements.txt
