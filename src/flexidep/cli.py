@@ -1,11 +1,14 @@
+"""CLI implementation."""
+
 from .config import DONT_INSTALL_TEXT
 from .core import PackageManagers, get_package_managers_list
-from .exceptions import OperationCanceledException
+from .exceptions import OperationCanceledError
 
 
 def show_alternatives(prompt, alternative_list, default=None, show_cancel=True):
     """
-    Show the list of alternatives
+    Show the list of alternatives.
+
     :param prompt: the prompt
     :param alternative_list: a list of alternatives
     :param default: the default choice
@@ -13,14 +16,15 @@ def show_alternatives(prompt, alternative_list, default=None, show_cancel=True):
     :return:
     """
     print(prompt)
-    for i, alternative in enumerate(alternative_list):
-        if default == i:
+    idx = None
+    for idx, alternative in enumerate(alternative_list):
+        if default == idx:
             is_default = '*'
         else:
             is_default = ' '
-        print(f' {is_default} {i + 1}. {alternative}')
+        print(f' {is_default} {idx + 1}. {alternative}')
 
-    cancel_option = str(i+2)
+    cancel_option = str(idx + 2)
 
     if show_cancel:
         print(f'   {cancel_option}. Cancel')
@@ -32,7 +36,7 @@ def show_alternatives(prompt, alternative_list, default=None, show_cancel=True):
             choice = input('Enter your choice: ')
 
         if show_cancel and choice == cancel_option:
-            raise OperationCanceledException()
+            raise OperationCanceledError()
 
         if default is not None and not choice:
             return default
@@ -45,13 +49,13 @@ def show_alternatives(prompt, alternative_list, default=None, show_cancel=True):
 
 def show_yesno(prompt, default=None, show_cancel=True):
     """
-    Shows a prompt with a yes/no answer
+    Show a prompt with a yes/no answer.
+
     :param prompt: the prompt
     :param default: default value
     :param show_cancel: whether to give the cancel option
     :return:
     """
-
     if show_cancel:
         cancel_prompt = '/[C]ancel'
     else:
@@ -72,17 +76,25 @@ def show_yesno(prompt, default=None, show_cancel=True):
 
         choice_char = choice[0].lower()
         if show_cancel and choice_char == 'c':
-            raise OperationCanceledException()
+            raise OperationCanceledError()
 
         if choice_char == 'y':
             return True
-        elif choice_char == 'n':
+        if choice_char == 'n':
             return False
 
         print('Invalid choice. Please try again')
 
 
 def show_open(prompt, default=None, show_cancel=True):
+    """
+    Show a prompt with a yes/no/cancel answer.
+
+    :param prompt: the prompt
+    :param default: default value
+    :param show_cancel: whether to give the cancel option
+    :return:
+    """
     print(prompt)
     if default is not None:
         print(f' [Default: {default}]')
@@ -96,10 +108,10 @@ def show_open(prompt, default=None, show_cancel=True):
                 return default
             choice_char = choice[0].lower()
             if show_cancel and choice_char == 'c':
-                raise OperationCanceledException()
+                raise OperationCanceledError()
             if choice_char == 'y':
                 return default
-            elif choice_char == 'n':
+            if choice_char == 'n':
                 break
             print('Invalid choice. Please try again')
 
@@ -110,21 +122,25 @@ def show_open(prompt, default=None, show_cancel=True):
 
     choice = input(f'Your input{cancel_prompt}>')
     if choice.strip().lower() == 'cancel' or choice.strip().lower() == '"cancel"':
-        raise OperationCanceledException()
+        raise OperationCanceledError()
 
     return choice
 
 
 def interactive_initialize(default_package_manager, default_install_local, default_extra_command_line):
     """
-    Show the initialization interface
+    Show the initialization interface.
+
     :return:
     """
-
     # The package manager enum always contains "common" at 1, which is not offered as an option, so the returned
     # choice, which starts at zero, always corresponds to the package manager index-2
-    choice = show_alternatives('Select a package manager', [x.capitalize() for x in get_package_managers_list()],
-                               default_package_manager.value - 2, True)
+    choice = show_alternatives(
+        'Select a package manager',
+        [x.capitalize() for x in get_package_managers_list()],
+        default_package_manager.value - 2,
+        True,
+    )
     package_manager = PackageManagers(choice + 2)
 
     install_local = default_install_local
@@ -138,7 +154,8 @@ def interactive_initialize(default_package_manager, default_install_local, defau
 
 def select_package_alternative(package, alternatives_list, optional=False):
     """
-    Select a package alternative
+    Select a package alternative.
+
     :param package: the package name
     :param alternatives_list: the list of alternatives
     :param optional: whether the package is optional
@@ -158,6 +175,5 @@ def select_package_alternative(package, alternatives_list, optional=False):
     if optional:
         if choice == 0:
             return None
-        else:
-            return alternatives_list[choice - 1]
+        return alternatives_list[choice - 1]
     return alternatives_list[choice]

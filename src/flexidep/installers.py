@@ -1,13 +1,16 @@
+"""Installers handling functions."""
+
+import shlex
 import subprocess
 import sys
-import shlex
 
 from .config import PackageManagers
 
 
 def install_package(package_manager, package, install_local, extra_command_line):
     """
-    Install a package using the specified package manager
+    Install a package using the specified package manager.
+
     :param package_manager: the package manager to use
     :param package: the package to install
     :param install_local: whether to install locally
@@ -16,15 +19,15 @@ def install_package(package_manager, package, install_local, extra_command_line)
     """
     if package_manager == PackageManagers.pip:
         return install_pip(package, install_local, extra_command_line)
-    elif package_manager == PackageManagers.conda:
+    if package_manager == PackageManagers.conda:
         return install_conda(package, extra_command_line)
-    else:
-        raise ValueError('Unknown package manager')
+    raise ValueError('Unknown package manager')
 
 
 def install_conda(package, extra_command_line):
     """
-    Install a package using conda
+    Install a package using conda.
+
     :param package: the package to install
     :param extra_command_line: extra command line parameters
     :return:
@@ -42,7 +45,8 @@ def install_conda(package, extra_command_line):
 
 def install_pip(package, install_local, extra_command_line):
     """
-    Install a package using pip
+    Install a package using pip.
+
     :param package: the package to install
     :param install_local: whether to install locally
     :param extra_command_line: extra command line parameters

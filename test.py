@@ -1,11 +1,13 @@
-import sys
-import os
+"""Test file."""
 
-from tkinter import *
+import os
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from flexidep import DependencyManager
+from flexidep import (  # noqa: E402 pylint: disable=wrong-import-position
+    DependencyManager,
+)
 
 if __name__ == '__main__':
     dm = DependencyManager()
