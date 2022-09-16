@@ -1,3 +1,7 @@
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/flexidep)
+[![PyPI version](https://badge.fury.io/py/flexidep.svg)](https://badge.fury.io/py/flexidep)
+![GitHub](https://img.shields.io/github/license/fsantini/python-dependency-manager)
+
 # Flexidep
 Package to manage optional and alternate dependencies in python packages.
 
