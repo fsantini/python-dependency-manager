@@ -1,16 +1,16 @@
 # Flexidep
 Package to manage optional and alternate dependencies in python packages.
 
-This package checks for dependencies at runtime and provides an interface to install them.
-It supports multiple alternatives, so that the user can choose which package to install.
+This package checks for dependencies at runtime and provides an interface to install them.  It supports multiple
+alternatives, so that the user can choose which package to install.
 
 Choice for pip and conda are provided.
 
 ## Usage
 
-This package is intended to be configured using a cfg file (similar to setup.cfg) and to be called at runtime during
-the initialization of the containing module or program, before any import is done.
-It reads all the modules that are required and tries to install them.
+This package is intended to be configured using a cfg file (similar to setup.cfg) and to be called at runtime during the
+initialization of the containing module or program, before any import is done. It reads all the modules that are
+required and tries to install them.
 
 The installation can either be interactive or automatic, depending on the intended usage.
 
@@ -59,8 +59,11 @@ The dictionary has the format `{module_name: [list, of, alternative, sources, wi
 
 The main functions that are used are:
 * `load_file(file)` to load the configuration file. `file` can be a file name, a file object, or a path-like object.
-* `install_interactive(force_optional)` to install the dependencies in interactive mode. If force_optional is false, optional dependencies will only be asked once and the choice will be remembered. If it is true, the choices are cleared and the optional dependencies are asked again.
-* `install_auto(install_optional)` to install the dependencies in automatic mode. If install_optional is true, optional dependencies are installed too, otherwise only the required ones are.
+* `install_interactive(force_optional)` to install the dependencies in interactive mode. If force_optional is false,
+  optional dependencies will only be asked once and the choice will be remembered. If it is true, the choices are
+  cleared and the optional dependencies are asked again.
+* `install_auto(install_optional)` to install the dependencies in automatic mode. If install_optional is true, optional
+  dependencies are installed too, otherwise only the required ones are.
 
 #### Utility functions
 The following functions are provided for convenience:
