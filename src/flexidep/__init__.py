@@ -1,4 +1,4 @@
-VERSION = '0.0.1'
+VERSION = '0.0.3'
 
 from .config import PackageManagers
 from .DependencyManager import DependencyManager

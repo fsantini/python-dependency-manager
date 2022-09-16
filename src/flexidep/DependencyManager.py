@@ -63,6 +63,9 @@ class DependencyManager:
 
         parser = ConfigParser(comment_prefixes=('#',))
 
+        # preserve capitalization of options
+        parser.optionxform = lambda option: option
+
         if isinstance(config_file, io.IOBase):
             parser.read_file(config_file)
         else:
@@ -70,6 +73,9 @@ class DependencyManager:
 
         # load global configuration
         if parser.has_section('Global'):
+            if parser.has_option('Global', 'interactive initialization'):
+                self.initialized = not parser.getboolean('Global', 'interactive initialization')
+
             if parser.has_option('Global', 'id'):
                 self.unique_id = parser.get('Global', 'id')
 
