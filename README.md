@@ -25,7 +25,7 @@ dm = DependencyManager()
 dm.load_file('test.cfg')
 try:
     dm.install_interactive(force_optional=True)
-except OperationCanceledException:
+except OperationCanceledError:
     print('Installation canceled')
 except SetupFailedError:
     print('Setup failed')
@@ -33,13 +33,16 @@ except SetupFailedError:
 
 A `DependencyManager` object is created with the following parameters:
 ```python
-DependencyManager(config_file=None, pkg_dict=None,
-                  unique_id=None,
-                  interactive_initialization=True,
-                  use_gui=False,
-                  install_local=False,
-                  package_manager=PackageManagers.pip,
-                  extra_command_line='')
+DependencyManager(
+    config_file=None,
+    pkg_dict=None,
+    unique_id=None,
+    interactive_initialization=True,
+    use_gui=False,
+    install_local=False,
+    package_manager=PackageManagers.pip,
+    extra_command_line='',
+)
 ```
 
 * `config_file`: path to the configuration file. It can be a string, a Path-like object or a file-like object.
@@ -47,7 +50,7 @@ DependencyManager(config_file=None, pkg_dict=None,
 * `pkg_dict`: dictionary containing the configuration. If both `config_file` and `pkg_dict` are provided, the file is used.
 The dictionary has the format `{module_name: [list, of, alternative, sources, with, platform, markers]}`
 * `unique_id`: unique identifier for the project. It is used to store the configuration in the user's home directory.
-* `interactive_initialization`: if True, the user is asked to choose the global installation paramters.
+* `interactive_initialization`: if True, the user is asked to choose the global installation parameters.
 * `use_gui`: if True, a GUI is used for the interactive installation.
 * `install_local`: if True, the packages are installed locally in the current environment (`--user` flag to pip)
 * `package_manager`: package manager to use. Can be `PackageManagers.pip` or `PackageManagers.conda`.
