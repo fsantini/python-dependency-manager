@@ -1,0 +1,5 @@
+exclude test.py
+exclude test.cfg
+exclude .pre-commit-config.yaml
+
+include requirements.txt

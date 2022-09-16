@@ -1,16 +1,20 @@
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/flexidep)
+[![PyPI version](https://badge.fury.io/py/flexidep.svg)](https://badge.fury.io/py/flexidep)
+![GitHub](https://img.shields.io/github/license/fsantini/python-dependency-manager)
+
 # Flexidep
 Package to manage optional and alternate dependencies in python packages.
 
-This package checks for dependencies at runtime and provides an interface to install them.
-It supports multiple alternatives, so that the user can choose which package to install.
+This package checks for dependencies at runtime and provides an interface to install them.  It supports multiple
+alternatives, so that the user can choose which package to install.
 
 Choice for pip and conda are provided.
 
 ## Usage
 
-This package is intended to be configured using a cfg file (similar to setup.cfg) and to be called at runtime during
-the initialization of the containing module or program, before any import is done.
-It reads all the modules that are required and tries to install them.
+This package is intended to be configured using a cfg file (similar to setup.cfg) and to be called at runtime during the
+initialization of the containing module or program, before any import is done. It reads all the modules that are
+required and tries to install them.
 
 The installation can either be interactive or automatic, depending on the intended usage.
 
@@ -19,13 +23,13 @@ For the interactive installation, a command-line interface or a GUI based on tk 
 ### Integration in your code
 
 ```python
-from flexidep import DependencyManager, SetupFailedError, OperationCanceledException
+from flexidep import DependencyManager, SetupFailedError, OperationCanceledError
 
 dm = DependencyManager()
 dm.load_file('test.cfg')
 try:
     dm.install_interactive(force_optional=True)
-except OperationCanceledException:
+except OperationCanceledError:
     print('Installation canceled')
 except SetupFailedError:
     print('Setup failed')
@@ -33,13 +37,16 @@ except SetupFailedError:
 
 A `DependencyManager` object is created with the following parameters:
 ```python
-DependencyManager(config_file=None, pkg_dict=None,
-                  unique_id=None,
-                  interactive_initialization=True,
-                  use_gui=False,
-                  install_local=False,
-                  package_manager=PackageManagers.pip,
-                  extra_command_line='')
+DependencyManager(
+    config_file=None,
+    pkg_dict=None,
+    unique_id=None,
+    interactive_initialization=True,
+    use_gui=False,
+    install_local=False,
+    package_manager=PackageManagers.pip,
+    extra_command_line='',
+)
 ```
 
 * `config_file`: path to the configuration file. It can be a string, a Path-like object or a file-like object.
@@ -47,7 +54,7 @@ DependencyManager(config_file=None, pkg_dict=None,
 * `pkg_dict`: dictionary containing the configuration. If both `config_file` and `pkg_dict` are provided, the file is used.
 The dictionary has the format `{module_name: [list, of, alternative, sources, with, platform, markers]}`
 * `unique_id`: unique identifier for the project. It is used to store the configuration in the user's home directory.
-* `interactive_initialization`: if True, the user is asked to choose the global installation paramters.
+* `interactive_initialization`: if True, the user is asked to choose the global installation parameters.
 * `use_gui`: if True, a GUI is used for the interactive installation.
 * `install_local`: if True, the packages are installed locally in the current environment (`--user` flag to pip)
 * `package_manager`: package manager to use. Can be `PackageManagers.pip` or `PackageManagers.conda`.
@@ -56,8 +63,11 @@ The dictionary has the format `{module_name: [list, of, alternative, sources, wi
 
 The main functions that are used are:
 * `load_file(file)` to load the configuration file. `file` can be a file name, a file object, or a path-like object.
-* `install_interactive(force_optional)` to install the dependencies in interactive mode. If force_optional is false, optional dependencies will only be asked once and the choice will be remembered. If it is true, the choices are cleared and the optional dependencies are asked again.
-* `install_auto(install_optional)` to install the dependencies in automatic mode. If install_optional is true, optional dependencies are installed too, otherwise only the required ones are.
+* `install_interactive(force_optional)` to install the dependencies in interactive mode. If force_optional is false,
+  optional dependencies will only be asked once and the choice will be remembered. If it is true, the choices are
+  cleared and the optional dependencies are asked again.
+* `install_auto(install_optional)` to install the dependencies in automatic mode. If install_optional is true, optional
+  dependencies are installed too, otherwise only the required ones are.
 
 #### Utility functions
 The following functions are provided for convenience:
