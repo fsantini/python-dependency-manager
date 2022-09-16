@@ -1,3 +1,25 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ['setuptools']
+build-backend = 'setuptools.build_meta'
+
+# ==============================================================================
+
+[tool.black]
+line-length = 120
+target-version = ['py37','py38', 'py39', 'py310']
+skip-string-normalization = true
+
+[tool.pylint]
+    [tool.pylint.format]
+    max-line-length = 120
+
+    [tool.pylint.basic]
+    good-names = ['DependencyManager', 'fd', 'ok']
+
+    [tool.pylint.design]
+    max-args = 9
+    max-attributes = 50
+    max-branches=16
+
+[tool.isort]
+profile = "black"
