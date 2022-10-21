@@ -22,7 +22,7 @@ skip-string-normalization = true
     [tool.pylint.design]
     max-args = 9
     max-attributes = 50
-    max-branches=16
+    max-branches = 20
 
 [tool.isort]
 profile = "black"

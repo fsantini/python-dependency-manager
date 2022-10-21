@@ -94,6 +94,9 @@ id = com.myname.myproject
 optional packages =
     tensorflow
 
+# Defines a priority order for the packages to be installed
+priority = my_pip_package
+
 # This section contains list of packages to be installed.
 # The name of each entry is the name of the *module* that the package provides.
 # For example, tensorflow-gpu and tensorflow-cpu both provide the tensorflow module.
@@ -107,6 +110,12 @@ tensorflow =
     tensorflow_cpu ; sys_platform != 'darwin'
     tensorflow_metal ; sys_platform == 'darwin'
     tensorflow_macos ; sys_platform == 'darwin'
+
+# dependencies and conflicts can be specified for each alternative
+# this is useful if this package automatically installs something that
+# is unwanted with the rest of the package.
+package_with_dependencies =
+    package_1 +install_before_package1 +install_before_package2 -uninstall_before_package --uninstall_after_package ++install_after_package
 
 [Pip]
 # pip-specific packages. These packages will only be installed if pip is used as a manager.

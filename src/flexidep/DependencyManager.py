@@ -3,12 +3,13 @@
 import io
 import os
 import re
+from collections import OrderedDict
 from configparser import ConfigParser
 
 from .config import PackageManagers, ignored_packages_file
 from .core import get_package_managers_list, pkg_exists, process_alternatives
 from .exceptions import ConfigurationError, SetupFailedError
-from .installers import install_package
+from .installers import install_package_with_deps
 
 
 class DependencyManager:
@@ -51,6 +52,7 @@ class DependencyManager:
             self.pkg_to_install[PackageManagers[pkg_mgr]] = {}
         self.optional_packages = []
         self.ignored_packages = []
+        self.priority_list = []
         if config_file:
             self.load_file(config_file)
         elif pkg_dict:
@@ -112,6 +114,11 @@ class DependencyManager:
                 # split the list at commas and newlines
                 self.optional_packages = [x.strip() for x in re.split('[\n,]', opt_packages)]
 
+            if parser.has_option('Global', 'priority'):
+                priority_str = parser.get('Global', 'priority').strip()
+                # split the list at commas and newlines
+                self.priority_list = [x.strip() for x in re.split('[\n,]', priority_str)]
+
         if parser.has_section('Packages'):
             self.pkg_to_install[PackageManagers.common] = {}
             for package, alternatives in parser.items('Packages'):
@@ -128,7 +135,9 @@ class DependencyManager:
             if parser.has_section(section_name):
                 self.pkg_to_install[package_manager] = {}
                 for package, alternatives in parser.items(section_name):
-                    self.pkg_to_install[package_manager][package] = process_alternatives(alternatives.split('\n'))
+                    self.pkg_to_install[package_manager][package] = process_alternatives(
+                        re.split('[\n,]', alternatives)
+                    )
 
         self.validate_config()
 
@@ -181,6 +190,21 @@ class DependencyManager:
         with os.open(ignored_packages_file(self.unique_id), 'w', mode=0o644) as fd:
             fd.write('\n'.join(self.ignored_packages))
 
+    def sort_packages(self, pkg_dict):
+        """
+        Sort the packages according to the priority list.
+
+        :param pkg_dict: dictionary of packages to sort
+        :return: sorted list of packages
+        """
+        if not self.priority_list:
+            return
+
+        # the first package in the priority list will end up as the first package in the ordered dict
+        for package in self.priority_list[::-1]:
+            if package in pkg_dict:
+                pkg_dict.move_to_end(package, last=False)  # move package to the beginning
+
     def install_interactive(self, force_optional=False):
         """
         Install the packages.
@@ -193,7 +217,11 @@ class DependencyManager:
             self.show_initialization()
 
         # compatible with python 3.6
-        pkg_to_install = {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
+        pkg_to_install = OrderedDict(
+            {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
+        )
+
+        self.sort_packages(pkg_to_install)
 
         if force_optional:
             self.clear_ignored_packages()
@@ -216,16 +244,24 @@ class DependencyManager:
         :return: Nothing
         """
         # compatible with python 3.6
-        pkg_to_install = {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
+        pkg_to_install = OrderedDict(
+            {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
+        )
+
+        self.sort_packages(pkg_to_install)
 
         for package, alternatives in pkg_to_install.items():
             if not pkg_exists(package):
                 if install_optional or package not in self.optional_packages:
-                    while not install_package(
-                        self.package_manager, alternatives[0], self.install_local, self.extra_command_line
+                    while not install_package_with_deps(
+                        self.package_manager,
+                        next(iter(alternatives.keys())),
+                        next(iter(alternatives.values())),
+                        self.install_local,
+                        self.extra_command_line,
                     ):
                         print(f'Error installing {package}. Trying a different alternative')
-                        alternatives.pop(0)
+                        alternatives.popitem(0)
                         if not alternatives and package not in self.optional_packages:
                             raise SetupFailedError(f'Failed to install {package}')
                         else:
@@ -241,19 +277,24 @@ class DependencyManager:
         :param optional: if True, the package is optional and the user will be asked if he wants to install it
         :return: True if the package was installed, False otherwise
         """
+        print(alternatives)
         if not alternatives:
             raise SetupFailedError(f'Could not install {package}')
 
         if not self.initialized:
             self.show_initialization()
 
-        source = self.select_alternative(package, alternatives, optional)
+        alternative_names = list(alternatives.keys())
+        source = self.select_alternative(package, alternative_names, optional)
         if optional and source is None:
             self.mark_ignored(package)
             return True
-        alternatives.remove(source)
+        dependencies = alternatives[source]
+        del alternatives[source]
 
-        return install_package(self.package_manager, source, self.install_local, self.extra_command_line)
+        return install_package_with_deps(
+            self.package_manager, source, dependencies, self.install_local, self.extra_command_line
+        )
 
     def show_initialization(self):
         """
