@@ -45,21 +45,15 @@ def parse_alternative(alternative_string: str) -> (str, list, list, list, list):
     install_after = []
     uninstall_after = []
 
-    print('Package name:', package_name)
-
     for tok in tokens[1:]:
         if tok.startswith('++'):
             install_after.append(tok[2:])
-            print('Install after:', tok[2:])
         elif tok.startswith('--'):
             uninstall_after.append(tok[2:])
-            print('Uninstall after:', tok[2:])
         elif tok.startswith('+'):
             install_before.append(tok[1:])
-            print('Install before:', tok[1:])
         elif tok.startswith('-'):
             uninstall_before.append(tok[1:])
-            print('Uninstall before:', tok[1:])
 
     return package_name, install_before, uninstall_before, install_after, uninstall_after
 
@@ -101,8 +95,10 @@ def pkg_exists(pkg_name):
     :param pkg_name: the name of the package
     :return: True if the package exists, False otherwise
     """
+    print(f'Checking if package {pkg_name} exists...')
     try:
         __import__(pkg_name)
+        print('Ok')
         return True
     except ImportError:
         return False

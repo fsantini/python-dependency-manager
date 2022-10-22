@@ -1,7 +1,6 @@
 """Definition of DependencyManager class."""
 
 import io
-import os
 import re
 from collections import OrderedDict
 from configparser import ConfigParser
@@ -9,7 +8,7 @@ from configparser import ConfigParser
 from .config import PackageManagers, ignored_packages_file
 from .core import get_package_managers_list, pkg_exists, process_alternatives
 from .exceptions import ConfigurationError, SetupFailedError
-from .installers import install_package_with_deps
+from .installers import install_package_with_deps, uninstall_package
 
 
 class DependencyManager:
@@ -18,7 +17,7 @@ class DependencyManager:
     def __init__(
         self,
         config_file=None,
-        pkg_dict=None,
+        config_string=None,
         unique_id=None,
         interactive_initialization=True,
         use_gui=False,
@@ -53,10 +52,12 @@ class DependencyManager:
         self.optional_packages = []
         self.ignored_packages = []
         self.priority_list = []
+        self.pkg_to_uninstall = {}
+        self.pkg_to_uninstall[PackageManagers.common] = []
         if config_file:
             self.load_file(config_file)
-        elif pkg_dict:
-            self.load_dict(pkg_dict)
+        elif config_string:
+            self.load_string(config_string)
 
     def validate_config(self):
         """
@@ -69,9 +70,28 @@ class DependencyManager:
 
     def load_file(self, config_file):
         """
-        Load the configuration file.
+        Load the configuration from a file.
 
         :param config_file: can be a string, a file-like object, or a path-like object
+        :return: Nothing
+        """
+        self.load_config(config_file, False)
+
+    def load_string(self, config_string):
+        """
+        Load the configuration from a string.
+
+        :param config_string: string containing the configuration
+        :return: Nothing
+        """
+        self.load_config(config_string, True)
+
+    def load_config(self, config, is_configuration_string=False):
+        """
+        Load the configuration.
+
+        :param config: can be a string, a file-like object, or a path-like object
+        :param is_configuration_string: True if the config is a string containing the configuration itself
         :return: Nothing
         """
         parser = ConfigParser(comment_prefixes=('#',))
@@ -79,10 +99,13 @@ class DependencyManager:
         # preserve capitalization of options
         parser.optionxform = lambda option: option
 
-        if isinstance(config_file, io.IOBase):
-            parser.read_file(config_file)
+        if is_configuration_string:
+            parser.read_string(config)
         else:
-            parser.read(config_file)
+            if isinstance(config, io.IOBase):
+                parser.read_file(config)
+            else:
+                parser.read(config)
 
         # load global configuration
         if parser.has_section('Global'):
@@ -119,6 +142,20 @@ class DependencyManager:
                 # split the list at commas and newlines
                 self.priority_list = [x.strip() for x in re.split('[\n,]', priority_str)]
 
+            package_manager_suffixes = [''] + [
+                f'.{package_manager.lower()}' for package_manager in get_package_managers_list()
+            ]
+
+            for package_manager_suffix in package_manager_suffixes:
+                if parser.has_option('Global', 'uninstall' + package_manager_suffix):
+                    uninstall_str = parser.get('Global', 'uninstall' + package_manager_suffix).strip()
+                    if package_manager_suffix == '':
+                        dict_key = PackageManagers.common
+                    else:
+                        dict_key = PackageManagers[package_manager_suffix[1:]]
+                    # split the list at commas and newlines
+                    self.pkg_to_uninstall[dict_key] = [x.strip() for x in re.split('[\n,]', uninstall_str)]
+
         if parser.has_section('Packages'):
             self.pkg_to_install[PackageManagers.common] = {}
             for package, alternatives in parser.items('Packages'):
@@ -141,21 +178,6 @@ class DependencyManager:
 
         self.validate_config()
 
-    def load_dict(self, pkg_dict):
-        """
-        Load the configuration from a dictionary.
-
-        :param pkg_dict: dictionary in the format {module_name: [list, of, alternatives, with, platform, markers]}
-        :return: Nothing
-        """
-        self.pkg_to_install[PackageManagers.common] = {}
-
-        for package, alternatives in pkg_dict.items():
-            alternatives = process_alternatives(alternatives)
-            self.pkg_to_install[PackageManagers.common][package] = alternatives
-
-        self.validate_config()
-
     def load_ignored_packages(self):
         """
         Get the list of ignored packages.
@@ -168,6 +190,13 @@ class DependencyManager:
         except FileNotFoundError:
             self.ignored_packages = []
 
+        # remove packages that are not optional anymore
+        for package in self.ignored_packages[:]:
+            if package not in self.optional_packages:
+                self.ignored_packages.remove(package)
+
+        self.save_ignored_packages()
+
     def clear_ignored_packages(self):
         """
         Clear the ignore list.
@@ -175,7 +204,7 @@ class DependencyManager:
         :return: Nothing
         """
         self.ignored_packages = []
-        with os.open(ignored_packages_file(self.unique_id), 'w', mode=0o644) as fd:
+        with open(ignored_packages_file(self.unique_id), 'w', encoding='utf-8') as fd:
             fd.write('')
 
     def mark_ignored(self, package):
@@ -185,9 +214,16 @@ class DependencyManager:
         :param package: package to ignore
         :return: Nothing
         """
-        print(f'Ignoring {package}')
         self.ignored_packages.append(package)
-        with os.open(ignored_packages_file(self.unique_id), 'w', mode=0o644) as fd:
+        self.save_ignored_packages()
+
+    def save_ignored_packages(self):
+        """
+        Save the list of ignored packages.
+
+        :return: Nothing
+        """
+        with open(ignored_packages_file(self.unique_id), 'w', encoding='utf-8') as fd:
             fd.write('\n'.join(self.ignored_packages))
 
     def sort_packages(self, pkg_dict):
@@ -216,6 +252,13 @@ class DependencyManager:
         if not self.initialized:
             self.show_initialization()
 
+        # uninstall packages
+        pkg_to_uninstall_list = (
+            self.pkg_to_uninstall[PackageManagers.common] + self.pkg_to_uninstall[self.package_manager]
+        )
+        for pkg in pkg_to_uninstall_list:
+            self.uninstall_package(pkg, interactive=True)
+
         # compatible with python 3.6
         pkg_to_install = OrderedDict(
             {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
@@ -243,6 +286,13 @@ class DependencyManager:
         :param install_optional: if True, optional packages will be installed
         :return: Nothing
         """
+        # uninstall packages
+        pkg_to_uninstall_list = (
+            self.pkg_to_uninstall[PackageManagers.common] + self.pkg_to_uninstall[self.package_manager]
+        )
+        for pkg in pkg_to_uninstall_list:
+            self.uninstall_package(pkg, interactive=False)
+
         # compatible with python 3.6
         pkg_to_install = OrderedDict(
             {**self.pkg_to_install[PackageManagers.common], **self.pkg_to_install[self.package_manager]}
@@ -262,11 +312,30 @@ class DependencyManager:
                     ):
                         print(f'Error installing {package}. Trying a different alternative')
                         alternatives.popitem(0)
-                        if not alternatives and package not in self.optional_packages:
+                        if not alternatives:
+                            if package in self.optional_packages:
+                                print(f'No more alternatives for {package}. Not failing because it is optional')
+                                break
                             raise SetupFailedError(f'Failed to install {package}')
-                        else:
-                            print(f'No more alternatives for {package}. Not failing because it is optional')
-                            break
+
+    def uninstall_package(self, package, interactive=True):
+        """
+        Uninstall a package.
+
+        :param package: package to uninstall
+        :param interactive: if True, the user will be asked to confirm the uninstallation
+        :return: Nothing
+        """
+        if interactive:
+            if self.use_gui:
+                from .gui import notify_uninstall
+            else:
+                from .cli import notify_uninstall
+
+            if not notify_uninstall(package):
+                raise SetupFailedError(f'Uninstallation of {package} aborted by user')
+
+        uninstall_package(self.package_manager, package)
 
     def install_package(self, package, alternatives, optional=False):
         """
@@ -277,7 +346,6 @@ class DependencyManager:
         :param optional: if True, the package is optional and the user will be asked if he wants to install it
         :return: True if the package was installed, False otherwise
         """
-        print(alternatives)
         if not alternatives:
             raise SetupFailedError(f'Could not install {package}')
 

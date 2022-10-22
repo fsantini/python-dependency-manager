@@ -39,7 +39,7 @@ A `DependencyManager` object is created with the following parameters:
 ```python
 DependencyManager(
     config_file=None,
-    pkg_dict=None,
+    config_string=None,
     unique_id=None,
     interactive_initialization=True,
     use_gui=False,
@@ -51,8 +51,7 @@ DependencyManager(
 
 * `config_file`: path to the configuration file. It can be a string, a Path-like object or a file-like object.
 **Note**: all configuration options in a config file supersede the options specified in the constructor.
-* `pkg_dict`: dictionary containing the configuration. If both `config_file` and `pkg_dict` are provided, the file is used.
-The dictionary has the format `{module_name: [list, of, alternative, sources, with, platform, markers]}`
+* `config_string`: string containing the configuration in config file format. If both `config_file` and `config_string` are provided, the file is used.
 * `unique_id`: unique identifier for the project. It is used to store the configuration in the user's home directory.
 * `interactive_initialization`: if True, the user is asked to choose the global installation parameters.
 * `use_gui`: if True, a GUI is used for the interactive installation.
@@ -95,7 +94,13 @@ optional packages =
     tensorflow
 
 # Defines a priority order for the packages to be installed
-priority = my_pip_package
+priority = my_pip_package, tensorflow
+
+# Here you can specify which packages should be uninstalled because they conflict with this package
+uninstall = conflict_package
+# package-manager-specific packages can be defined like this
+uninstall.pip = conflict_package_pip
+uninstall.conda = conflict_package_conda
 
 # This section contains list of packages to be installed.
 # The name of each entry is the name of the *module* that the package provides.

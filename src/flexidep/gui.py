@@ -1,7 +1,8 @@
 """GUI implementation."""
 
 import tkinter as tk
-from tkinter import ttk
+from contextlib import contextmanager
+from tkinter import messagebox, ttk
 
 from .config import DONT_INSTALL_TEXT, PackageManagers
 from .core import get_package_managers_list
@@ -208,3 +209,27 @@ def select_package_alternative(package_name, source_alternatives, optional=False
         return None
 
     return dialog.alternative
+
+
+@contextmanager
+def tk_context_manager():
+    """Context manager for Tkinter."""
+    root = tk.Tk()
+    try:
+        yield root
+    finally:
+        root.destroy()
+
+
+def notify_uninstall(package):
+    """
+    Notify the user that a package will be uninstalled.
+
+    :param package: the package name
+    :return: True if the user accepts, False otherwise
+    """
+    with tk_context_manager() as root:
+        root.withdraw()
+        return messagebox.askyesno(
+            'Uninstall package', f'Uninstall {package} (Note: answering no will abort the execution)?'
+        )

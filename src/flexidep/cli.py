@@ -86,6 +86,16 @@ def show_yesno(prompt, default=None, show_cancel=True):
         print('Invalid choice. Please try again')
 
 
+def notify_uninstall(package):
+    """
+    Notify the user that a package will be uninstalled.
+
+    :param package: the package name
+    :return: True if the user accepts, False otherwise
+    """
+    return show_yesno(f'Uninstall {package} (Note: answering no will abort the execution)', True, False)
+
+
 def show_open(prompt, default=None, show_cancel=True):
     """
     Show a prompt with a yes/no/cancel answer.
