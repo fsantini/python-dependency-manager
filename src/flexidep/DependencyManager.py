@@ -169,8 +169,8 @@ class DependencyManager:
             # sections are always capitalized
             section_name = package_manager_name.capitalize()
             package_manager = PackageManagers[package_manager_name]
+            self.pkg_to_install[package_manager] = {}
             if parser.has_section(section_name):
-                self.pkg_to_install[package_manager] = {}
                 for package, alternatives in parser.items(section_name):
                     self.pkg_to_install[package_manager][package] = process_alternatives(
                         re.split('[\n,]', alternatives)
