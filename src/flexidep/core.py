@@ -95,10 +95,8 @@ def pkg_exists(pkg_name):
     :param pkg_name: the name of the package
     :return: True if the package exists, False otherwise
     """
-    print(f'Checking if package {pkg_name} exists...')
     try:
         __import__(pkg_name)
-        print('Ok')
         return True
     except ImportError:
         return False

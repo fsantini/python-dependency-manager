@@ -46,13 +46,13 @@ class DependencyManager:
         self.extra_command_line = extra_command_line
         self.initialized = not interactive_initialization
         self.pkg_to_install = {}
-        self.pkg_to_install[PackageManagers.common] = {}
-        for pkg_mgr in get_package_managers_list():
-            self.pkg_to_install[PackageManagers[pkg_mgr]] = {}
+        self.pkg_to_uninstall = {}
+        for pkg_mgr in PackageManagers:
+            self.pkg_to_install[pkg_mgr] = {}
+            self.pkg_to_uninstall[pkg_mgr] = []
         self.optional_packages = []
         self.ignored_packages = []
         self.priority_list = []
-        self.pkg_to_uninstall = {}
         self.pkg_to_uninstall[PackageManagers.common] = []
         if config_file:
             self.load_file(config_file)
@@ -147,12 +147,12 @@ class DependencyManager:
             ]
 
             for package_manager_suffix in package_manager_suffixes:
+                if package_manager_suffix == '':
+                    dict_key = PackageManagers.common
+                else:
+                    dict_key = PackageManagers[package_manager_suffix[1:]]
                 if parser.has_option('Global', 'uninstall' + package_manager_suffix):
                     uninstall_str = parser.get('Global', 'uninstall' + package_manager_suffix).strip()
-                    if package_manager_suffix == '':
-                        dict_key = PackageManagers.common
-                    else:
-                        dict_key = PackageManagers[package_manager_suffix[1:]]
                     # split the list at commas and newlines
                     self.pkg_to_uninstall[dict_key] = [x.strip() for x in re.split('[\n,]', uninstall_str)]
 
