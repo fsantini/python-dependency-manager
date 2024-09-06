@@ -35,7 +35,14 @@ except SetupFailedError:
     print('Setup failed')
 ```
 
-A `DependencyManager` object is created with the following parameters:
+If you have a configuration file inside a python module, you can use the following simplified code:
+```python
+from flexidep import standard_install_from_resource
+from . import resources # assuming that "resources" is the name of the module where you have the configuration file
+standard_install_from_resource(resources, 'runtime_dependencies.cfg')
+````
+
+For manual control, a `DependencyManager` object is created with the following parameters:
 ```python
 DependencyManager(
     config_file=None,
@@ -115,6 +122,13 @@ tensorflow =
     tensorflow_cpu ; sys_platform != 'darwin'
     tensorflow_metal ; sys_platform == 'darwin'
     tensorflow_macos ; sys_platform == 'darwin'
+
+# Alternatives to be checked can also be specified, separated by a pipe character.
+# For example, this checks that either PyQt5 or PySide2 is installed and prompts to
+# install one of them if none is found.
+PyQt5|PySide2 =
+    PyQt5
+    PySide2
 
 # dependencies and conflicts can be specified for each alternative
 # this is useful if this package automatically installs something that

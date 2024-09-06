@@ -95,8 +95,10 @@ def pkg_exists(pkg_name):
     :param pkg_name: the name of the package
     :return: True if the package exists, False otherwise
     """
-    try:
-        __import__(pkg_name)
-        return True
-    except ImportError:
-        return False
+    for pkg_to_check in pkg_name.split('|'):
+        try:
+            __import__(pkg_to_check)
+            return True
+        except ImportError:
+            pass
+    return False
