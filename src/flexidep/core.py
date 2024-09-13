@@ -1,6 +1,7 @@
 """Core module for flexidep."""
 from collections import OrderedDict
 from typing import NamedTuple
+import re
 
 from packaging.markers import Marker
 
@@ -58,7 +59,7 @@ def parse_alternative(alternative_string: str) -> (str, list, list, list, list):
     return package_name, install_before, uninstall_before, install_after, uninstall_after
 
 
-def process_alternatives(alternatives: list) -> dict:
+def process_alternatives(alternatives_str: str) -> dict:
     """
     Process the alternatives to only show the ones relevant to the current setup.
 
@@ -66,6 +67,7 @@ def process_alternatives(alternatives: list) -> dict:
     :return: a dictionary where the keys are packages (without markers) that are relevant to the current setup,
     and the elements are the packages to install/uninstall before and after the main package
     """
+    alternatives = re.split('[\n,]', alternatives_str)
     alternatives_out = OrderedDict()
 
     for alternative in alternatives:

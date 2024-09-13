@@ -159,10 +159,7 @@ class DependencyManager:
         if parser.has_section('Packages'):
             self.pkg_to_install[PackageManagers.common] = {}
             for package, alternatives in parser.items('Packages'):
-                self.pkg_to_install[PackageManagers.common][package] = process_alternatives(
-                    re.split('[\n,]', alternatives)
-                )
-
+                self.pkg_to_install[PackageManagers.common][package] = process_alternatives(alternatives)
         package_managers = get_package_managers_list()  # list of possible package managers
 
         for package_manager_name in package_managers:
@@ -172,10 +169,7 @@ class DependencyManager:
             self.pkg_to_install[package_manager] = {}
             if parser.has_section(section_name):
                 for package, alternatives in parser.items(section_name):
-                    self.pkg_to_install[package_manager][package] = process_alternatives(
-                        re.split('[\n,]', alternatives)
-                    )
-
+                    self.pkg_to_install[package_manager][package] = process_alternatives(alternatives)
         self.validate_config()
 
     def load_ignored_packages(self):
@@ -241,6 +235,46 @@ class DependencyManager:
             if package in pkg_dict:
                 pkg_dict.move_to_end(package, last=False)  # move package to the beginning
 
+    def process_single_package(self, package, alternatives_str, interactive=True, force_optional=False):
+        """
+        Process a single package.
+
+        :param package: the package name
+        :param alternatives_str: the string containing the alternatives
+        :param force_optional: if True, the program will ask to install optional packages even if they were already
+            ignored once
+        :param interactive: if True, the user will be asked to confirm the uninstallation
+        :return: Nothing
+        """
+        alternatives = process_alternatives(alternatives_str)
+
+        self.load_ignored_packages()
+        if not force_optional and (package in self.ignored_packages):
+            return
+        if pkg_exists(package):
+            return
+        if interactive:
+            while alternatives:
+                if self.install_package_interactive(package, alternatives):
+                    return # success
+                print(f'Error installing {package}. Trying a different alternative')
+            raise SetupFailedError(f'Failed to install {package}')
+        # this is only reached if not interactive
+        while not install_package_with_deps(
+                self.package_manager,
+                next(iter(alternatives.keys())),
+                next(iter(alternatives.values())),
+                self.install_local,
+                self.extra_command_line,
+        ):
+            print(f'Error installing {package}. Trying a different alternative')
+            alternatives.popitem(0)
+            if not alternatives:
+                if package in self.optional_packages:
+                    print(f'No more alternatives for {package}. Not failing because it is optional')
+                    break
+                raise SetupFailedError(f'Failed to install {package}')
+
     def install_interactive(self, force_optional=False):
         """
         Install the packages.
@@ -276,7 +310,7 @@ class DependencyManager:
                 continue
             # if the package is not installed, try to install it until it works or there are no more alternatives
             if not pkg_exists(package):
-                while not self.install_package(package, alternatives, optional=package in self.optional_packages):
+                while not self.install_package_interactive(package, alternatives, optional=package in self.optional_packages):
                     print(f'Error installing {package}. Trying a different alternative')
 
     def install_auto(self, install_optional=False):
@@ -337,7 +371,7 @@ class DependencyManager:
 
         uninstall_package(self.package_manager, package)
 
-    def install_package(self, package, alternatives, optional=False):
+    def install_package_interactive(self, package, alternatives, optional=False):
         """
         Install a package.
 
