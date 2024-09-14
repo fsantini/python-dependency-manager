@@ -248,7 +248,10 @@ class DependencyManager:
         """
         alternatives = process_alternatives(alternatives_str)
 
-        self.load_ignored_packages()
+        if self.unique_id:
+            self.load_ignored_packages()
+        else:
+            self.ignored_packages = []
         if not force_optional and (package in self.ignored_packages):
             return
         if pkg_exists(package):

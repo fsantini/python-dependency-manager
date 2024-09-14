@@ -67,7 +67,7 @@ def process_alternatives(alternatives_str: str) -> dict:
     :return: a dictionary where the keys are packages (without markers) that are relevant to the current setup,
     and the elements are the packages to install/uninstall before and after the main package
     """
-    alternatives = re.split('[\n,]', alternatives_str)
+    alternatives = [x.strip() for x in re.split('[\n,]', alternatives_str)]
     alternatives_out = OrderedDict()
 
     for alternative in alternatives:
