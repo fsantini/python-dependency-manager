@@ -2,6 +2,9 @@
 
 import os
 import sys
+import urllib.request
+import json
+import importlib.metadata as metadata
 
 def is_conda_environment():
     """Check if the current environment is a conda environment."""
@@ -11,6 +14,19 @@ def is_conda_environment():
 def is_frozen():
     """Check if the current environment is a frozen (pyinstaller) environment."""
     return getattr(sys, 'frozen', False)
+
+def get_pypi_available_versions(package_name):
+    """Return a list of available versions for a package on PyPI."""
+    url = f"https://pypi.org/pypi/{package_name}/json"
+    with urllib.request.urlopen(url) as response:
+        data = json.load(response)
+    releases = list(data["releases"].keys())
+    return releases[::-1] # return releases from latest to oldest
+
+def get_installed_packages():
+    """Return a list of (package_name, version) tuples for all pip-installed packages."""
+    return [(dist.metadata['Name'], dist.version) for dist in metadata.distributions()]
+
 
 def standard_install_from_resource(resource_module, configuration_file_name, interactive=True):
     """

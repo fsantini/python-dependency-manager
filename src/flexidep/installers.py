@@ -57,6 +57,9 @@ def install_package(package_manager, package, install_local, extra_command_line)
     else:
         raise ValueError('Unknown package manager')
 
+def install_package_version(package_manager, package, version, install_local, extra_command_line):
+    # get base package name
+    base_package_name =
 
 def install_conda(package, extra_command_line):
     """
