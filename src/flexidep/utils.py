@@ -11,6 +11,18 @@ from packaging import version
 
 from tqdm import tqdm
 
+class PackageDict(dict):
+    def __init__(self):
+        dict.__init__(self)
+
+    def __getitem__(self, item):
+        item = _pypi_canonical_name(item)
+        return super(PackageDict, self).__getitem__(item)
+
+    def __setitem__(self, key, value):
+        key = _pypi_canonical_name(key)
+        return super(PackageDict, self).__setitem__(key, value)
+
 def is_conda_environment():
     """Check if the current environment is a conda environment."""
     return os.path.exists(os.path.join(sys.base_prefix, 'conda-meta'))
@@ -43,7 +55,10 @@ def get_pypi_available_versions(package_name):
 
 def get_installed_packages():
     """Return a dictionary of (package_name: version) for all pip-installed packages."""
-    return {_pypi_canonical_name(dist.metadata['Name']): version.Version(dist.version) for dist in metadata.distributions()}
+    out_dict = PackageDict()
+    for dist in metadata.distributions():
+        out_dict[dist.metadata['Name']] = version.Version(dist.version)
+    return out_dict
 
 def get_installed_packages_with_available_versions(package_list = None):
     installed_packages = get_installed_packages()
@@ -55,7 +70,7 @@ def get_installed_packages_with_available_versions(package_list = None):
             package_list = [package_list]
         package_list = [_pypi_canonical_name(package) for package in package_list] #convert packages to canonical names
         package_list = filter(lambda package: package in installed_packages, package_list)
-    output_dict = {}
+    output_dict = PackageDict()
     for package_name in tqdm(package_list):
         current_version = installed_packages[package_name]
         output_element = {}
