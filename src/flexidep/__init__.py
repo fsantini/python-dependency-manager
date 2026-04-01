@@ -5,4 +5,5 @@ from .DependencyManager import DependencyManager
 from .exceptions import *
 from .utils import *
 
-VERSION = '0.0.9'
+VERSION = '0.0.10'
+__version__ = VERSION

@@ -3,6 +3,7 @@
 import shlex
 import subprocess
 import sys
+import re
 
 from .config import PackageManagers
 
@@ -40,7 +41,7 @@ def install_package_with_deps(package_manager, package, dependencies, install_lo
     return True
 
 
-def install_package(package_manager, package, install_local, extra_command_line):
+def install_package(package_manager, package, install_local=False, extra_command_line=''):
     """
     Install a package using the specified package manager.
 
@@ -57,9 +58,12 @@ def install_package(package_manager, package, install_local, extra_command_line)
     else:
         raise ValueError('Unknown package manager')
 
-def install_package_version(package_manager, package, version, install_local, extra_command_line):
+def install_package_version(package_manager, package, version, install_local=False, extra_command_line=''):
     # get base package name
-    base_package_name =
+    m = re.match(r'\s*([A-Za-z0-9_.-]*)', package) # this extracts only the base package name, in case there are version indications etc
+    base_package_name = m.group(1)
+    package_to_install = f'{base_package_name}=={str(version)}'
+    return install_package(package_manager, package_to_install, install_local, extra_command_line)
 
 def install_conda(package, extra_command_line):
     """
