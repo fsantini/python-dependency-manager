@@ -61,7 +61,7 @@ def get_installed_packages_with_available_versions(package_list = None):
         output_element = {}
         output_element['installed_version'] = current_version
         available_versions = get_pypi_available_versions(package_name)
-        if current_version == available_versions[0]:
+        if current_version >= available_versions[0]:
             output_element['latest'] = True
         else:
             output_element['latest'] = False
