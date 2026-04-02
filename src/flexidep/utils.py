@@ -76,6 +76,8 @@ def get_installed_packages_with_available_versions(package_list = None):
         output_element = {}
         output_element['installed_version'] = current_version
         available_versions = get_pypi_available_versions(package_name)
+        if not available_versions:
+            continue # this package is not available on PyPI
         if current_version >= available_versions[0]:
             output_element['latest'] = True
         else:
