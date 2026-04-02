@@ -39,6 +39,9 @@ def parse_alternative(alternative_string: str) -> (str, list, list, list, list):
     :return: a list of packages to be installed after the main package
     :return: a list of packages to be uninstalled after the main package
     """
+    # remove spaces around >=, <=, ==, ~= so that name and version specifier fall in the same token
+    alternative_string = re.sub(r'\s*(>=?|<=?|===?|~=|!=)\s*', r'\1', alternative_string)
+
     tokens = alternative_string.split(' ')
     package_name = tokens[0]
     install_before = []

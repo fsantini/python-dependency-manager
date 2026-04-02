@@ -235,7 +235,7 @@ class DependencyManager:
             if package in pkg_dict:
                 pkg_dict.move_to_end(package, last=False)  # move package to the beginning
 
-    def process_single_package(self, package, alternatives_str, interactive=True, force_optional=False):
+    def process_single_package(self, package, alternatives_str, interactive=True, force_optional=False, force_reinstall=False):
         """
         Process a single package.
 
@@ -248,19 +248,34 @@ class DependencyManager:
         """
         alternatives = process_alternatives(alternatives_str)
 
+        remove_force_reinstall_from_extra = False
+        def cleanup_extra_command_line():
+            if remove_force_reinstall_from_extra:
+                self.extra_command_line = self.extra_command_line.replace('--force-reinstall', '')
+                self.extra_command_line = self.extra_command_line.strip()
+
         if self.unique_id:
             self.load_ignored_packages()
         else:
             self.ignored_packages = []
         if not force_optional and (package in self.ignored_packages):
             return
-        if pkg_exists(package):
+        if not force_reinstall and pkg_exists(package):
             return
+
+        if force_reinstall:
+            if '--force-reinstall' not in self.extra_command_line:
+                remove_force_reinstall_from_extra = True # remove the extra flag at the end, if it was not present
+                self.extra_command_line += ' --force-reinstall'
+                self.extra_command_line = self.extra_command_line.strip() # remove trailing spaces if needed
+
         if interactive:
             while alternatives:
                 if self.install_package_interactive(package, alternatives):
+                    cleanup_extra_command_line()
                     return # success
                 print(f'Error installing {package}. Trying a different alternative')
+            cleanup_extra_command_line()
             raise SetupFailedError(f'Failed to install {package}')
         # this is only reached if not interactive
         while not install_package_with_deps(
@@ -276,7 +291,9 @@ class DependencyManager:
                 if package in self.optional_packages:
                     print(f'No more alternatives for {package}. Not failing because it is optional')
                     break
+                cleanup_extra_command_line()
                 raise SetupFailedError(f'Failed to install {package}')
+        cleanup_extra_command_line()
 
     def install_interactive(self, force_optional=False):
         """

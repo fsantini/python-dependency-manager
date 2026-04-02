@@ -40,7 +40,7 @@ def get_pypi_available_versions(package_name):
     #print("Processing", package_name)
     url = f"https://pypi.org/pypi/{package_name}/json"
     try:
-        with urllib.request.urlopen(url) as response:
+        with urllib.request.urlopen(url, timeout=1) as response:
             data = json.load(response)
     except (HTTPError, json.JSONDecodeError, UnicodeDecodeError):
         return []
@@ -60,7 +60,13 @@ def get_installed_packages():
         out_dict[dist.metadata['Name']] = version.Version(dist.version)
     return out_dict
 
-def get_installed_packages_with_available_versions(package_list = None):
+def get_installed_packages_with_available_versions(package_list = None, callback=None):
+    """
+    Get a list of installed packages with available versions on PyPI
+    :param package_list: optional list of packages to include
+    :param callback: optional callback function that accepts two integer values: current package and total packages
+    :return:
+    """
     installed_packages = get_installed_packages()
     if package_list is None:
         package_list = installed_packages.keys()
@@ -69,9 +75,15 @@ def get_installed_packages_with_available_versions(package_list = None):
         if isinstance(package_list, str):
             package_list = [package_list]
         package_list = [_pypi_canonical_name(package) for package in package_list] #convert packages to canonical names
-        package_list = filter(lambda package: package in installed_packages, package_list)
+        package_list = list(filter(lambda package: package in installed_packages, package_list))
     output_dict = PackageDict()
-    for package_name in tqdm(package_list):
+    total_packages = len(package_list)
+    for current_package_number, package_name in enumerate(tqdm(package_list)):
+        if callback is not None:
+            try:
+                callback(current_package_number, total_packages)
+            except Exception as e:
+                print("Error in callback", e)
         current_version = installed_packages[package_name]
         output_element = {}
         output_element['installed_version'] = current_version
