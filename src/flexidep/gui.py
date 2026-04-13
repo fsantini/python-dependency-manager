@@ -1,6 +1,21 @@
 """GUI implementation."""
 
+# hack for windows virtual environments, otherwise tk does not work
+import os, sys
+
 import tkinter as tk
+if sys.platform == 'win32':
+    # Point to the base Python installation's Tcl/Tk
+    base = os.path.dirname(sys.executable)
+    # Walk up if we're in a venv
+    if hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        base = sys.base_prefix
+        # Get actual Tcl/Tk version from the interpreter
+        tcl_version = f"tcl{tkinter.TclVersion}"
+        tk_version = f"tk{tkinter.TkVersion}"
+        os.environ['TCL_LIBRARY'] = os.path.join(base, 'tcl', tcl_version)
+        os.environ['TK_LIBRARY'] = os.path.join(base, 'tcl', tk_version)
+
 from contextlib import contextmanager
 from tkinter import messagebox, ttk
 
