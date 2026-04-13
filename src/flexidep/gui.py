@@ -8,7 +8,7 @@ if sys.platform == 'win32':
     # Point to the base Python installation's Tcl/Tk
     base = os.path.dirname(sys.executable)
     # Walk up if we're in a venv
-    if hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+    if hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix:
         base = sys.base_prefix
         # Get actual Tcl/Tk version from the interpreter
         tcl_version = f"tcl{tkinter.TclVersion}"
