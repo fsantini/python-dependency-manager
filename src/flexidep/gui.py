@@ -11,8 +11,8 @@ if sys.platform == 'win32':
     if hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix:
         base = sys.base_prefix
         # Get actual Tcl/Tk version from the interpreter
-        tcl_version = f"tcl{tkinter.TclVersion}"
-        tk_version = f"tk{tkinter.TkVersion}"
+        tcl_version = f"tcl{tk.TclVersion}"
+        tk_version = f"tk{tk.TkVersion}"
         os.environ['TCL_LIBRARY'] = os.path.join(base, 'tcl', tcl_version)
         os.environ['TK_LIBRARY'] = os.path.join(base, 'tcl', tk_version)
 
