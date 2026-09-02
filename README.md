@@ -145,3 +145,4 @@ my_pip_package =
 [Conda]
 # conda-specific packages
 ``
+Note: prepending a package name with ! forces a reinstall of the package.

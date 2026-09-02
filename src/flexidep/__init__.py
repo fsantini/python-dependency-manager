@@ -6,5 +6,5 @@ from .exceptions import *
 from .utils import *
 from .installers import install_package_version, install_package, uninstall_package
 
-VERSION = '0.0.16'
+VERSION = '0.0.17'
 __version__ = VERSION

@@ -7,6 +7,11 @@ import re
 
 from .config import PackageManagers
 
+def add_to_command_line(command_line: str, addition: str) -> str:
+    if not command_line:
+        return addition
+    else:
+        return command_line + ' ' + addition
 
 def install_package_with_deps(package_manager, package, dependencies, install_local, extra_command_line):
     """
@@ -24,18 +29,30 @@ def install_package_with_deps(package_manager, package, dependencies, install_lo
             return False
 
     for install_before in dependencies.install_before:
-        if not install_package(package_manager, install_before, install_local, extra_command_line):
+        command_line = extra_command_line
+        if install_before.startswith('!'):
+            command_line = add_to_command_line(command_line, '--force-reinstall')
+            install_before = install_before[1:]
+        if not install_package(package_manager, install_before, install_local, command_line):
             return False
 
-    if not install_package(package_manager, package, install_local, extra_command_line):
+    command_line = extra_command_line
+    if package.startswith('!'):
+        command_line = add_to_command_line(command_line, '--force-reinstall')
+        package = package[1:]
+    if not install_package(package_manager, package, install_local, command_line):
         return False
-
-    for install_after in dependencies.install_after:
-        if not install_package(package_manager, install_after, install_local, extra_command_line):
-            return False
 
     for uninstall_after in dependencies.uninstall_after:
         if not uninstall_package(package_manager, uninstall_after):
+            return False
+
+    for install_after in dependencies.install_after:
+        command_line = extra_command_line
+        if install_after.startswith('!'):
+            command_line = add_to_command_line(command_line, '--force-reinstall')
+            install_after = install_after[1:]
+        if not install_package(package_manager, install_after, install_local, command_line):
             return False
 
     return True
